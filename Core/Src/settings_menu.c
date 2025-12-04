@@ -325,21 +325,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		downClick = 1;
 	}
 }
-//		uint32_t now = HAL_GetTick();
-//		if (now - last_isr_ms < 20)
-//			return;   // debounce
-//		last_isr_ms = now;
-//
-//		if (GPIO_Pin == BTN_CENTER_Pin
-//				&& pressed(BTN_CENTER_GPIO_Port, BTN_CENTER_Pin)) {
-//			centerClick = 1;
-//		} else if (GPIO_Pin == BTN_LEFT_Pin
-//				&& pressed(BTN_LEFT_GPIO_Port, BTN_LEFT_Pin)) {
-//			leftClick = 1;
-//		} else if (GPIO_Pin == BTN_RIGHT_Pin
-//				&& pressed(BTN_RIGHT_GPIO_Port, BTN_RIGHT_Pin)) {
-//			rightClick = 1;
-//		}
+
 
 static bool takeSelectClick(void) {
 	if (selectClick) {

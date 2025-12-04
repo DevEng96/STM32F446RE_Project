@@ -30,6 +30,8 @@ float pct = 0.0f;
 uint32_t ledBlinkLastToggle = 0;
 bool ledBlinkState = false;
 static uint8_t pumpCyclesThisCheck = 0;
+static bool selectWasHigh = false;
+
 
 void Irrigation_Init(void) {
 	// reset timers, counters, etc.
@@ -49,7 +51,7 @@ void Irrigation_Tick(void) {
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 
 	switch (currentState) {
-	case STATE_IDLE:
+	case STATE_IDLE: {
 		if (justEnteredState) {
 			printf("STATE IDLE\r\n");
 			setLED(1, 0, 1);
@@ -60,14 +62,23 @@ void Irrigation_Tick(void) {
 			nextCheckTime = now + CHECK_PERIOD_MS;  // schedule next check
 			justEnteredState = 1;
 		}
-		if (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
-				== GPIO_PIN_SET) {
-			currentState = STATE_SETTINGS;
-			justEnteredState = 1;
+		bool selNow = (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin) == GPIO_PIN_SET);
+//		if (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
+//				== GPIO_PIN_SET) {
+//			currentState = STATE_SETTINGS;
+//			justEnteredState = 1;
+//		}
+		if (!selectWasHigh && selNow) {
+		    currentState    = STATE_SETTINGS;
+		    justEnteredState = 1;
 		}
-		break;
 
-	case STATE_CHECK_CONDITIONS:
+		// remember for next tick
+		selectWasHigh = selNow;
+		break;
+	}
+
+	case STATE_CHECK_CONDITIONS: {
 
 		float moisture = getMoisture();
 		float temp = readTemp();
@@ -103,88 +114,92 @@ void Irrigation_Tick(void) {
 			currentState = STATE_PUMP_ON;
 			justEnteredState = 1;
 			break;
+		}
+	}
 
-			case STATE_PUMP_ON:
+	case STATE_PUMP_ON: {
 
-			if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-				// safety: make sure pump is OFF
-				HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
-						GPIO_PIN_RESET);
-				currentState = STATE_IDLE;       // or STATE_ERROR if you prefer
-				justEnteredState = 1;
-				break;
-			}
-
-			if (justEnteredState) {
-				HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
-						GPIO_PIN_SET);
-				pumpStartTime = now;
-				pumpCyclesSinceLastSample++;
-				justEnteredState = 0;
-				pumpCyclesThisCheck++;
-				printf("STATE PUMP ON:  %u\r\n", pumpCyclesThisCheck);
-			}
-			if ((int32_t) (now - pumpStartTime) >= (int32_t) PUMP_ON_MS) {
-				HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
-						GPIO_PIN_RESET); // pump OFF
-				soakStartTime = now;
-				currentState = STATE_SOAK_WAIT;
-				justEnteredState = 1;
-			}
-			//			check max cycle counts
-
-			break;
-			case STATE_SOAK_WAIT:
-
-			if ((int32_t) (now - soakStartTime) >= (int32_t) SOAK_WAIT_MS) {
-
-				float moisture = getMoisture();
-				printf("STATE SOAK WAIT:  %f\r\n", moisture);
-				if (moisture
-						< moistureMaxPct&& pumpCyclesThisCheck < PUMP_CYCLES_MAX) {
-					currentState = STATE_PUMP_ON;
-				} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-					currentState = STATE_ERROR;
-				} else {
-					currentState = STATE_CHECK_CONDITIONS;
-				}
-				justEnteredState = 1;
-			}
-			break;
-
-			case STATE_SETTINGS:
-			{
-				if (justEnteredState) {
-					Settings_Enter();
-					justEnteredState = 0;
-				}
-
-				Settings_Tick();
-
-				// Settings_Tick() could set a flag or return a value to indicate "finished"
-				if (Settings_IsDone()) {  // or a boolean flag
-					Settings_Leave();
-					currentState = STATE_IDLE;
-					justEnteredState = 1;
-				}
-				break;
-			}
-
-			case STATE_ERROR:
+		if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
+			// safety: make sure pump is OFF
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
 					GPIO_PIN_RESET);
-
-			if (!tankLevelOK()) {
-				blinkLED(LED_BLUE, 500);
-			} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-				blinkLED(LED_RED, 500);
-			}
-			if (tankLevelOK()) {
-				currentState = STATE_IDLE;
-				justEnteredState = 1;
-			}
+			currentState = STATE_IDLE;       // or STATE_ERROR if you prefer
+			justEnteredState = 1;
 			break;
 		}
+
+		if (justEnteredState) {
+			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_SET);
+			pumpStartTime = now;
+			pumpCyclesSinceLastSample++;
+			justEnteredState = 0;
+			pumpCyclesThisCheck++;
+			printf("STATE PUMP ON:  %u\r\n", pumpCyclesThisCheck);
+		}
+		if ((int32_t) (now - pumpStartTime) >= (int32_t) PUMP_ON_MS) {
+			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
+					GPIO_PIN_RESET); // pump OFF
+			soakStartTime = now;
+			currentState = STATE_SOAK_WAIT;
+			justEnteredState = 1;
+		}
+		//			check max cycle counts
+
+		break;
+	}
+	case STATE_SOAK_WAIT: {
+
+		if ((int32_t) (now - soakStartTime) >= (int32_t) SOAK_WAIT_MS) {
+
+			float moisture = getMoisture();
+			printf("STATE SOAK WAIT:  %f\r\n", moisture);
+			if (moisture
+					< moistureMaxPct&& pumpCyclesThisCheck < PUMP_CYCLES_MAX) {
+				currentState = STATE_PUMP_ON;
+			} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
+				currentState = STATE_ERROR;
+			} else {
+				currentState = STATE_CHECK_CONDITIONS;
+			}
+			justEnteredState = 1;
+		}
+		break;
+	}
+
+	case STATE_SETTINGS: {
+
+		if (justEnteredState) {
+			Settings_Enter(); // prepare menu, clear clicks, draw first screen
+			justEnteredState = 0;
+		}
+
+		// let the menu handle buttons / drawing
+		Settings_Tick();
+
+		// when menu says “I’m done”, leave settings
+		if (Settings_IsDone()) {
+			Settings_Leave();      // optional: clear LCD, reset LEDs
+			currentState = STATE_IDLE;
+			justEnteredState = 1;
+		}
+		break;
+	}
+
+	case STATE_ERROR: {
+
+		HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_RESET);
+
+		if (!tankLevelOK()) {
+			blinkLED(LED_BLUE, 500);
+		} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
+			blinkLED(LED_RED, 500);
+		}
+		if (tankLevelOK()) {
+			currentState = STATE_IDLE;
+			justEnteredState = 1;
+		}
+		break;
+	}
 	}
 }
 
@@ -195,11 +210,11 @@ void setLED(int rState, int gState, int bState) {
 }
 
 bool inWateringWindow(RTC_TimeTypeDef *t) {
-	// Morning: 06:00–08:00  → hours 6 or 7
+// Morning: 06:00–08:00  → hours 6 or 7
 	if (t->Hours >= morningStartHour && t->Hours < morningEndHour)
 		return true;
 
-	// Evening: 20:00–22:00 → hours 20 or 21
+// Evening: 20:00–22:00 → hours 20 or 21
 	if (t->Hours >= eveningStartHour && t->Hours < eveningEndHour)
 		return true;
 
@@ -213,7 +228,7 @@ bool tankLevelOK(void) {
 void blinkLED(LedColor_t color, uint32_t intervalMs) {
 	uint32_t now = HAL_GetTick();
 
-	// Toggle only when interval elapsed
+// Toggle only when interval elapsed
 	if ((now - ledBlinkLastToggle) >= intervalMs) {
 		ledBlinkLastToggle = now;
 		ledBlinkState = !ledBlinkState;

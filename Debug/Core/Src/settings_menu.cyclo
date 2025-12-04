@@ -6,6 +6,6 @@
 ../Core/Src/settings_menu.c:227:13:Settings_DrawMenu	14
 ../Core/Src/settings_menu.c:306:23:pressed	1
 ../Core/Src/settings_menu.c:310:6:HAL_GPIO_EXTI_Callback	8
-../Core/Src/settings_menu.c:344:13:takeSelectClick	2
-../Core/Src/settings_menu.c:351:13:takeUpClick	2
-../Core/Src/settings_menu.c:358:13:takeDownClick	2
+../Core/Src/settings_menu.c:330:13:takeSelectClick	2
+../Core/Src/settings_menu.c:337:13:takeUpClick	2
+../Core/Src/settings_menu.c:344:13:takeDownClick	2
