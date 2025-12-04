@@ -60,11 +60,11 @@ void Irrigation_Tick(void) {
 			nextCheckTime = now + CHECK_PERIOD_MS;  // schedule next check
 			justEnteredState = 1;
 		}
-//		if (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
-//				== GPIO_PIN_SET) {
-//			currentState = STATE_SETTINGS;
-//			justEnteredState = 1;
-//		}
+		if (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
+				== GPIO_PIN_SET) {
+			currentState = STATE_SETTINGS;
+			justEnteredState = 1;
+		}
 		break;
 
 	case STATE_CHECK_CONDITIONS:

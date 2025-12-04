@@ -32,8 +32,8 @@ static EditState_t editState = EDIT_STATE_NONE;
 
 // button click flags (set in ISR, read+clear in Settings_Tick)
 static volatile uint8_t selectClick = 0;
-static volatile uint8_t upClick     = 0;
-static volatile uint8_t downClick   = 0;
+static volatile uint8_t upClick = 0;
+static volatile uint8_t downClick = 0;
 
 // ----- Private helper prototypes -----
 
@@ -43,8 +43,6 @@ static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin);
 static bool takeSelectClick(void);
 static bool takeUpClick(void);
 static bool takeDownClick(void);
-
-
 
 // LED helper from other module
 void setLED(int rState, int gState, int bState);
@@ -241,18 +239,12 @@ static void Settings_DrawMenu(void) {
 		} else {
 			snprintf(line1, sizeof(line1), "* M End Hour");
 		}
-
 		snprintf(line2, sizeof(line2), "  %02u:00-%02u:00", morningStartHour,
 				morningEndHour);
 
-//			    lcd_setString(0, 0, line1, LCD_FONT_8, false);
-//			    lcd_setString(0, 12, line2, LCD_FONT_8, false);
 		break;
 
 	case MENU_ITEM_WW_EVENING:
-//			snprintf(line1, sizeof(line1), "> Watering Evening");
-//			snprintf(line2, sizeof(line2), "  %02u:00-%02u:00",
-//					eveningStartHour, eveningEndHour);
 		if (editState == EDIT_STATE_NONE) {
 			snprintf(line1, sizeof(line1), "> Evening Window");
 		} else if (editState == EDIT_STATE_VALUE1) {
@@ -273,8 +265,6 @@ static void Settings_DrawMenu(void) {
 		}
 
 		snprintf(line2, sizeof(line2), "  %.1f degC", minTempC);
-		//			snprintf(line1, sizeof(line1), "> Min Temp");
-//			snprintf(line2, sizeof(line2), "  %.1f degC", minTempC);
 		break;
 
 	case MENU_ITEM_MOISTURE_MIN:
@@ -283,10 +273,8 @@ static void Settings_DrawMenu(void) {
 		} else {
 			snprintf(line1, sizeof(line1), "* Moisture Min");
 		}
-
 		snprintf(line2, sizeof(line2), "  %.1f %%", moistureMinPct);
-//			snprintf(line1, sizeof(line1), "> Moisture min");
-//			snprintf(line2, sizeof(line2), "  %.1f %%", moistureMinPct);
+
 		break;
 
 	case MENU_ITEM_MOISTURE_MAX:
@@ -297,15 +285,11 @@ static void Settings_DrawMenu(void) {
 		}
 
 		snprintf(line2, sizeof(line2), "  %.1f %%", moistureMaxPct);
-//			snprintf(line1, sizeof(line1), "> Moisture max");
-//			snprintf(line2, sizeof(line2), "  %.1f %%", moistureMaxPct);
 		break;
 
 	case MENU_ITEM_EXIT:
 		snprintf(line1, sizeof(line1), "> Exit Settings");
 		snprintf(line2, sizeof(line2), "  Press select");
-//			snprintf(line1, sizeof(line1), "> Exit Settings");
-//			snprintf(line2, sizeof(line2), "  Press left");
 		break;
 
 	default:
@@ -324,23 +308,22 @@ static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin) {
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-//	uint32_t now = HAL_GetTick();
-//	if (now - last_isr_ms < 20) {
-//		return;   // simple debounce
-//	}
-//	last_isr_ms = now;
-//
-//	// Adjust these names to your actual pin defines in main.h
-//	if (GPIO_Pin == BTN_SELECT_Pin
-//			&& pressed(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)) {
-//		selectClick = 1;
-//	} else if (GPIO_Pin == BTN_UP_Pin
-//			&& pressed(BTN_UP_GPIO_Port, BTN_UP_Pin)) {
-//		upClick = 1;
-//	} else if (GPIO_Pin == BTN_DOWN_Pin
-//			&& pressed(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin)) {
-//		downClick = 1;
-//	}
+	uint32_t now = HAL_GetTick();
+	if (now - last_isr_ms < 20) {
+		return;   // simple debounce
+	}
+	last_isr_ms = now;
+
+	if (GPIO_Pin == BTN_SELECT_Pin
+			&& pressed(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)) {
+		selectClick = 1;
+	} else if (GPIO_Pin == BTN_UP_Pin
+			&& pressed(BTN_UP_GPIO_Port, BTN_UP_Pin)) {
+		upClick = 1;
+	} else if (GPIO_Pin == BTN_DOWN_Pin
+			&& pressed(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin)) {
+		downClick = 1;
+	}
 }
 //		uint32_t now = HAL_GetTick();
 //		if (now - last_isr_ms < 20)
