@@ -1,0 +1,17 @@
+../LCD_Driver/Src/lcd_driver.c:91:13:chipSelect	1
+../LCD_Driver/Src/lcd_driver.c:96:13:registerSelect	1
+../LCD_Driver/Src/lcd_driver.c:101:13:displayReset	1
+../LCD_Driver/Src/lcd_driver.c:110:13:sendInstruction	1
+../LCD_Driver/Src/lcd_driver.c:120:17:sendData	1
+../LCD_Driver/Src/lcd_driver.c:128:6:lcd_setContrast	2
+../LCD_Driver/Src/lcd_driver.c:139:6:lcd_init	1
+../LCD_Driver/Src/lcd_driver.c:154:6:lcd_setPixel	4
+../LCD_Driver/Src/lcd_driver.c:164:6:lcd_clear	2
+../LCD_Driver/Src/lcd_driver.c:172:6:lcd_setChar	4
+../LCD_Driver/Src/lcd_driver.c:190:6:lcd_setString	4
+../LCD_Driver/Src/lcd_driver.c:202:6:lcd_setLine	10
+../LCD_Driver/Src/lcd_driver.c:232:6:lcd_show	3
+../LCD_Driver/Src/lcd_driver.c:243:6:lcd_setFrame	3
+../LCD_Driver/Src/lcd_driver.c:256:6:lcd_setBar	3
+../LCD_Driver/Src/lcd_driver.c:264:6:lcd_setSymbol8	4
+../LCD_Driver/Src/lcd_driver.c:275:6:lcd_setBackgroundLight	1

@@ -1,0 +1,10 @@
+../Core/Src/settings_menu.c:52:6:Settings_Init	1
+../Core/Src/settings_menu.c:56:6:Settings_Enter	1
+../Core/Src/settings_menu.c:70:6:Settings_Leave	1
+../Core/Src/settings_menu.c:76:6:Settings_IsDone	1
+../Core/Src/settings_menu.c:80:6:Settings_Tick	40
+../Core/Src/settings_menu.c:229:13:Settings_DrawMenu	14
+../Core/Src/settings_menu.c:326:6:HAL_GPIO_EXTI_Callback	1
+../Core/Src/settings_menu.c:361:13:takeSelectClick	2
+../Core/Src/settings_menu.c:368:13:takeUpClick	2
+../Core/Src/settings_menu.c:375:13:takeDownClick	2
