@@ -7,7 +7,7 @@
 
 #include "irrigation_state_machine.h"
 #include "logging.h"
-#include "main.h"
+#include "main.h" // check, is main.h needed?
 #include "rtc.h"
 #include "capsense.h"
 #include "lm75b.h"
@@ -32,9 +32,7 @@ bool ledBlinkState = false;
 static uint8_t pumpCyclesThisCheck = 0;
 static bool selectWasHigh = false;
 
-
 void Irrigation_Init(void) {
-	// reset timers, counters, etc.
 	lcd_init();
 	lcd_clear();
 	lcd_show();
@@ -62,15 +60,16 @@ void Irrigation_Tick(void) {
 			nextCheckTime = now + CHECK_PERIOD_MS;  // schedule next check
 			justEnteredState = 1;
 		}
-		bool selNow = (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin) == GPIO_PIN_SET);
+		bool selNow = (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
+				== GPIO_PIN_SET);
 //		if (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
 //				== GPIO_PIN_SET) {
 //			currentState = STATE_SETTINGS;
 //			justEnteredState = 1;
 //		}
 		if (!selectWasHigh && selNow) {
-		    currentState    = STATE_SETTINGS;
-		    justEnteredState = 1;
+			currentState = STATE_SETTINGS;
+			justEnteredState = 1;
 		}
 
 		// remember for next tick
@@ -89,7 +88,7 @@ void Irrigation_Tick(void) {
 
 			logSample(moisture, temp, pumpCyclesSinceLastSample);
 			pumpCyclesSinceLastSample = 0;
-			pumpCyclesThisCheck = 0;      // <-- reset per 15-min check
+			pumpCyclesThisCheck = 0;
 			justEnteredState = 0;
 			printf("STATE CHECK CONDITIONS [%02u:%02u:%02u]:  %0.2f  %0.2f\r\n",
 					sTime.Hours, sTime.Minutes, sTime.Seconds, moisture, temp);
@@ -144,7 +143,6 @@ void Irrigation_Tick(void) {
 			justEnteredState = 1;
 		}
 		//			check max cycle counts
-
 		break;
 	}
 	case STATE_SOAK_WAIT: {
@@ -169,16 +167,14 @@ void Irrigation_Tick(void) {
 	case STATE_SETTINGS: {
 
 		if (justEnteredState) {
-			Settings_Enter(); // prepare menu, clear clicks, draw first screen
+			Settings_Enter();
 			justEnteredState = 0;
 		}
 
-		// let the menu handle buttons / drawing
 		Settings_Tick();
 
-		// when menu says “I’m done”, leave settings
 		if (Settings_IsDone()) {
-			Settings_Leave();      // optional: clear LCD, reset LEDs
+			Settings_Leave();
 			currentState = STATE_IDLE;
 			justEnteredState = 1;
 		}
@@ -210,11 +206,9 @@ void setLED(int rState, int gState, int bState) {
 }
 
 bool inWateringWindow(RTC_TimeTypeDef *t) {
-// Morning: 06:00–08:00  → hours 6 or 7
 	if (t->Hours >= morningStartHour && t->Hours < morningEndHour)
 		return true;
 
-// Evening: 20:00–22:00 → hours 20 or 21
 	if (t->Hours >= eveningStartHour && t->Hours < eveningEndHour)
 		return true;
 
@@ -228,7 +222,6 @@ bool tankLevelOK(void) {
 void blinkLED(LedColor_t color, uint32_t intervalMs) {
 	uint32_t now = HAL_GetTick();
 
-// Toggle only when interval elapsed
 	if ((now - ledBlinkLastToggle) >= intervalMs) {
 		ledBlinkLastToggle = now;
 		ledBlinkState = !ledBlinkState;

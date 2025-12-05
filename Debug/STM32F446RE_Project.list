@@ -27,25 +27,25 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000030  00000000  00000000  0000c1e8  2**0
                   CONTENTS, READONLY
- 12 .debug_info   00013084  00000000  00000000  0000c218  2**0
+ 12 .debug_info   00013018  00000000  00000000  0000c218  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00003728  00000000  00000000  0001f29c  2**0
+ 13 .debug_abbrev 000036cf  00000000  00000000  0001f230  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00001098  00000000  00000000  000229c8  2**3
+ 14 .debug_aranges 00001090  00000000  00000000  00022900  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00000cb5  00000000  00000000  00023a60  2**0
+ 15 .debug_rnglists 00000cae  00000000  00000000  00023990  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  00026929  00000000  00000000  00024715  2**0
+ 16 .debug_macro  00026929  00000000  00000000  0002463e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   0001ae16  00000000  00000000  0004b03e  2**0
+ 17 .debug_line   0001adb1  00000000  00000000  0004af67  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    000e1f5f  00000000  00000000  00065e54  2**0
+ 18 .debug_str    000e1f57  00000000  00000000  00065d18  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000043  00000000  00000000  00147db3  2**0
+ 19 .comment      00000043  00000000  00000000  00147c6f  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00005468  00000000  00000000  00147df8  2**2
+ 20 .debug_frame  0000543c  00000000  00000000  00147cb4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_line_str 00000060  00000000  00000000  0014d260  2**0
+ 21 .debug_line_str 00000060  00000000  00000000  0014d0f0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -2013,15 +2013,14 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
  80013f4:	40020400 	.word	0x40020400
 
 080013f8 <Irrigation_Init>:
+uint32_t ledBlinkLastToggle = 0;
 bool ledBlinkState = false;
 static uint8_t pumpCyclesThisCheck = 0;
 static bool selectWasHigh = false;
 
-
 void Irrigation_Init(void) {
  80013f8:	b580      	push	{r7, lr}
  80013fa:	af00      	add	r7, sp, #0
-	// reset timers, counters, etc.
 	lcd_init();
  80013fc:	f005 fbf5 	bl	8006bea <lcd_init>
 	lcd_clear();
@@ -2133,7 +2132,7 @@ void Irrigation_Tick(void) {
  80014d2:	2201      	movs	r2, #1
  80014d4:	701a      	strb	r2, [r3, #0]
 		}
-		bool selNow = (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin) == GPIO_PIN_SET);
+		bool selNow = (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
  80014d6:	2102      	movs	r1, #2
  80014d8:	4892      	ldr	r0, [pc, #584]	@ (8001724 <Irrigation_Tick+0x2dc>)
  80014da:	f002 f997 	bl	800380c <HAL_GPIO_ReadPin>
@@ -2158,11 +2157,11 @@ void Irrigation_Tick(void) {
  80014f8:	797b      	ldrb	r3, [r7, #5]
  80014fa:	2b00      	cmp	r3, #0
  80014fc:	d005      	beq.n	800150a <Irrigation_Tick+0xc2>
-		    currentState    = STATE_SETTINGS;
+			currentState = STATE_SETTINGS;
  80014fe:	4b85      	ldr	r3, [pc, #532]	@ (8001714 <Irrigation_Tick+0x2cc>)
  8001500:	2205      	movs	r2, #5
  8001502:	701a      	strb	r2, [r3, #0]
-		    justEnteredState = 1;
+			justEnteredState = 1;
  8001504:	4b84      	ldr	r3, [pc, #528]	@ (8001718 <Irrigation_Tick+0x2d0>)
  8001506:	2201      	movs	r2, #1
  8001508:	701a      	strb	r2, [r3, #0]
@@ -2212,7 +2211,7 @@ void Irrigation_Tick(void) {
  800154e:	4b77      	ldr	r3, [pc, #476]	@ (800172c <Irrigation_Tick+0x2e4>)
  8001550:	2200      	movs	r2, #0
  8001552:	801a      	strh	r2, [r3, #0]
-			pumpCyclesThisCheck = 0;      // <-- reset per 15-min check
+			pumpCyclesThisCheck = 0;
  8001554:	4b76      	ldr	r3, [pc, #472]	@ (8001730 <Irrigation_Tick+0x2e8>)
  8001556:	2200      	movs	r2, #0
  8001558:	701a      	strb	r2, [r3, #0]
@@ -2413,7 +2412,6 @@ void Irrigation_Tick(void) {
  8001696:	701a      	strb	r2, [r3, #0]
 		}
 		//			check max cycle counts
-
 		break;
  8001698:	e09d      	b.n	80017d6 <Irrigation_Tick+0x38e>
 	}
@@ -2509,7 +2507,7 @@ void Irrigation_Tick(void) {
  8001756:	781b      	ldrb	r3, [r3, #0]
  8001758:	2b00      	cmp	r3, #0
  800175a:	d004      	beq.n	8001766 <Irrigation_Tick+0x31e>
-			Settings_Enter(); // prepare menu, clear clicks, draw first screen
+			Settings_Enter();
  800175c:	f000 fa96 	bl	8001c8c <Settings_Enter>
 			justEnteredState = 0;
  8001760:	4b23      	ldr	r3, [pc, #140]	@ (80017f0 <Irrigation_Tick+0x3a8>)
@@ -2517,17 +2515,15 @@ void Irrigation_Tick(void) {
  8001764:	701a      	strb	r2, [r3, #0]
 		}
 
-		// let the menu handle buttons / drawing
 		Settings_Tick();
  8001766:	f000 fad5 	bl	8001d14 <Settings_Tick>
 
-		// when menu says “I’m done”, leave settings
 		if (Settings_IsDone()) {
  800176a:	f000 fac7 	bl	8001cfc <Settings_IsDone>
  800176e:	4603      	mov	r3, r0
  8001770:	2b00      	cmp	r3, #0
  8001772:	d034      	beq.n	80017de <Irrigation_Tick+0x396>
-			Settings_Leave();      // optional: clear LCD, reset LEDs
+			Settings_Leave();
  8001774:	f000 fab4 	bl	8001ce0 <Settings_Leave>
 			currentState = STATE_IDLE;
  8001778:	4b1e      	ldr	r3, [pc, #120]	@ (80017f4 <Irrigation_Tick+0x3ac>)
@@ -2658,7 +2654,6 @@ bool inWateringWindow(RTC_TimeTypeDef *t) {
  800184e:	b083      	sub	sp, #12
  8001850:	af00      	add	r7, sp, #0
  8001852:	6078      	str	r0, [r7, #4]
-// Morning: 06:00–08:00  → hours 6 or 7
 	if (t->Hours >= morningStartHour && t->Hours < morningEndHour)
  8001854:	687b      	ldr	r3, [r7, #4]
  8001856:	781a      	ldrb	r2, [r3, #0]
@@ -2676,7 +2671,6 @@ bool inWateringWindow(RTC_TimeTypeDef *t) {
  800186c:	2301      	movs	r3, #1
  800186e:	e00e      	b.n	800188e <inWateringWindow+0x42>
 
-// Evening: 20:00–22:00 → hours 20 or 21
 	if (t->Hours >= eveningStartHour && t->Hours < eveningEndHour)
  8001870:	687b      	ldr	r3, [r7, #4]
  8001872:	781a      	ldrb	r2, [r3, #0]
@@ -2742,7 +2736,6 @@ void blinkLED(LedColor_t color, uint32_t intervalMs) {
  80018dc:	f001 f8b0 	bl	8002a40 <HAL_GetTick>
  80018e0:	60f8      	str	r0, [r7, #12]
 
-// Toggle only when interval elapsed
 	if ((now - ledBlinkLastToggle) >= intervalMs) {
  80018e2:	4b20      	ldr	r3, [pc, #128]	@ (8001964 <blinkLED+0x94>)
  80018e4:	681b      	ldr	r3, [r3, #0]

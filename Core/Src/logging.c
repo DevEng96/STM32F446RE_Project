@@ -31,19 +31,18 @@ void logSample(float moisture, float temp, uint16_t pumpCycles) {
 	}
 }
 
-void dumpLog(void) {
-	uint16_t i;
-	// Start from the oldest entry
-	uint16_t idx = (logCount < LOG_SAMPLES) ? 0 : logIndex; // when full, logIndex points to oldest
-
-	for (i = 0; i < logCount; i++) {
-		LogEntry *e = &logBuffer[idx];
-
-		printf("%lu,%0.1f,%0.1f,%u\r\n", (unsigned long) e->timestamp,
-				e->moisture_pct, e->temperature, e->pumpCycles);
-
-		idx++;
-		if (idx >= LOG_SAMPLES)
-			idx = 0;
-	}
-}
+//void dumpLog(void) {
+//	uint16_t i;
+//	uint16_t idx = (logCount < LOG_SAMPLES) ? 0 : logIndex; // when full, logIndex points to oldest
+//
+//	for (i = 0; i < logCount; i++) {
+//		LogEntry *e = &logBuffer[idx];
+//
+//		printf("%lu,%0.1f,%0.1f,%u\r\n", (unsigned long) e->timestamp,
+//				e->moisture_pct, e->temperature, e->pumpCycles);
+//
+//		idx++;
+//		if (idx >= LOG_SAMPLES)
+//			idx = 0;
+//	}
+//}
