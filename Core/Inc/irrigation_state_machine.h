@@ -21,9 +21,7 @@ typedef enum {
 	STATE_SETTINGS
 } SystemState_t;
 
-typedef enum {
-	LED_RED, LED_GREEN, LED_BLUE
-} LedColor_t;
+
 
 //#define CHECK_PERIOD_MS   (10UL * 60UL * 1000UL)  // 15 minutes
 //#define PUMP_ON_MS       (10UL*1000UL)   // 10 seconds example
@@ -37,9 +35,9 @@ typedef enum {
 
 void Irrigation_Init(void);
 void Irrigation_Tick(void);
-bool inWateringWindow(RTC_TimeTypeDef *t);
-bool tankLevelOK(void);
-void setLED(int rState, int gState, int bState);
-void blinkLED(LedColor_t color, uint32_t intervalMs);
+
+
+//static void setLED(int rState, int gState, int bState);
+//static void blinkLED(LedColor_t color, uint32_t intervalMs);
 
 #endif /* INC_IRRIGATION_STATE_MACHINE_H_ */

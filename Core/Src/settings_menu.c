@@ -9,17 +9,31 @@
 #include "lcd_driver.h"
 #include "main.h"
 #include <stdio.h>
+#include "logging.h"
 
 static uint32_t last_isr_ms = 0;   // debounce time from elsewhere
 
 // ----- Public setting variables (defined here, extern in header) -----
-uint8_t morningStartHour = 6;
-uint8_t morningEndHour = 8;
-uint8_t eveningStartHour = 20;
-uint8_t eveningEndHour = 22;
-float minTempC = 10.0f;
-float moistureMinPct = 25.0f;
-float moistureMaxPct = 40.0f;
+//uint8_t morningStartHour = 6;
+//uint8_t morningEndHour = 8;
+//uint8_t eveningStartHour = 20;
+//uint8_t eveningEndHour = 22;
+//float minTempC = 10.0f;
+//float moistureMinPct = 25.0f;
+//float moistureMaxPct = 40.0f;
+
+static Settings_t g_settings = {
+    .morningStartHour = 6,
+    .morningEndHour   = 8,
+    .eveningStartHour = 20,
+    .eveningEndHour   = 22,
+    .minTempC         = 10.0f,
+    .moistureMinPct   = 25.0f,
+    .moistureMaxPct   = 40.0f
+};
+
+
+
 
 // ----- Private state -----
 static MenuItem_t currentMenuItem = MENU_ITEM_WW_MORNING;
@@ -28,6 +42,7 @@ static bool settingsDone = false;
 typedef enum {
 	EDIT_STATE_NONE, EDIT_STATE_VALUE1, EDIT_STATE_VALUE2
 } EditState_t;
+
 static EditState_t editState = EDIT_STATE_NONE;
 
 // button click flags (set in ISR, read+clear in Settings_Tick)
@@ -50,6 +65,12 @@ void setLED(int rState, int gState, int bState);
 void Settings_Init(void) {
 	// nothing yet
 }
+
+const Settings_t* Settings_Get(void)
+{
+    return &g_settings;
+}
+
 
 void Settings_Enter(void) {
 	settingsDone = false;
@@ -99,6 +120,10 @@ void Settings_Tick(void) {
 			if (currentMenuItem == MENU_ITEM_EXIT) {
 				settingsDone = true;
 				return;
+			} else if (currentMenuItem == MENU_ITEM_DUMP_LOG) {
+				logDumpToUart();
+				// maybe print “Done.” or flash LED
+				return;
 			} else {
 				editState = EDIT_STATE_VALUE1; // start editing first value
 				Settings_DrawMenu();     // redraw with edit hint if desired
@@ -137,19 +162,19 @@ void Settings_Tick(void) {
 		if (editState == EDIT_STATE_VALUE1) {
 			// edit start hour
 			if (takeUpClick()) {
-				morningStartHour = (morningStartHour + 1) % 24;
+				g_settings.morningStartHour = (g_settings.morningStartHour + 1) % 24;
 				changed = true;
 			} else if (takeDownClick()) {
-				morningStartHour = (morningStartHour + 23) % 24;
+				g_settings.morningStartHour = (g_settings.morningStartHour + 23) % 24;
 				changed = true;
 			}
 		} else if (editState == EDIT_STATE_VALUE2) {
 			// edit end hour
 			if (takeUpClick()) {
-				morningEndHour = (morningEndHour + 1) % 24;
+				g_settings.morningEndHour = (g_settings.morningEndHour + 1) % 24;
 				changed = true;
 			} else if (takeDownClick()) {
-				morningEndHour = (morningEndHour + 23) % 24;
+				g_settings.morningEndHour = (g_settings.morningEndHour + 23) % 24;
 				changed = true;
 			}
 		}
@@ -159,19 +184,19 @@ void Settings_Tick(void) {
 		if (editState == EDIT_STATE_VALUE1) {
 			// edit start hour
 			if (takeUpClick()) {
-				eveningStartHour = (eveningStartHour + 1) % 24;
+				g_settings.eveningStartHour = (g_settings.eveningStartHour + 1) % 24;
 				changed = true;
 			} else if (takeDownClick()) {
-				eveningStartHour = (eveningStartHour + 23) % 24;
+				g_settings.eveningStartHour = (g_settings.eveningStartHour + 23) % 24;
 				changed = true;
 			}
 		} else if (editState == EDIT_STATE_VALUE2) {
 			// edit end hour
 			if (takeUpClick()) {
-				eveningEndHour = (eveningEndHour + 1) % 24;
+				g_settings.eveningEndHour = (g_settings.eveningEndHour + 1) % 24;
 				changed = true;
 			} else if (takeDownClick()) {
-				eveningEndHour = (eveningEndHour + 23) % 24;
+				g_settings.eveningEndHour = (g_settings.eveningEndHour + 23) % 24;
 				changed = true;
 			}
 		}
@@ -180,10 +205,10 @@ void Settings_Tick(void) {
 	case MENU_ITEM_MIN_TEMP:
 		if (editState == EDIT_STATE_VALUE1) {
 			if (takeUpClick()) {
-				minTempC += 0.5f;
+				g_settings.minTempC += 0.5f;
 				changed = true;
 			} else if (takeDownClick()) {
-				minTempC -= 0.5f;
+				g_settings.minTempC -= 0.5f;
 				changed = true;
 			}
 		}
@@ -192,10 +217,10 @@ void Settings_Tick(void) {
 	case MENU_ITEM_MOISTURE_MIN:
 		if (editState == EDIT_STATE_VALUE1) {
 			if (takeUpClick()) {
-				moistureMinPct += 1.0f;
+				g_settings.moistureMinPct += 1.0f;
 				changed = true;
 			} else if (takeDownClick()) {
-				moistureMinPct -= 1.0f;
+				g_settings.moistureMinPct -= 1.0f;
 				changed = true;
 			}
 		}
@@ -204,10 +229,10 @@ void Settings_Tick(void) {
 	case MENU_ITEM_MOISTURE_MAX:
 		if (editState == EDIT_STATE_VALUE1) {
 			if (takeUpClick()) {
-				moistureMaxPct += 1.0f;
+				g_settings.moistureMaxPct += 1.0f;
 				changed = true;
 			} else if (takeDownClick()) {
-				moistureMaxPct -= 1.0f;
+				g_settings.moistureMaxPct -= 1.0f;
 				changed = true;
 			}
 		}
@@ -239,8 +264,8 @@ static void Settings_DrawMenu(void) {
 		} else {
 			snprintf(line1, sizeof(line1), "* M End Hour");
 		}
-		snprintf(line2, sizeof(line2), "  %02u:00-%02u:00", morningStartHour,
-				morningEndHour);
+		snprintf(line2, sizeof(line2), "  %02u:00-%02u:00", g_settings.morningStartHour,
+				g_settings.morningEndHour);
 
 		break;
 
@@ -253,8 +278,8 @@ static void Settings_DrawMenu(void) {
 			snprintf(line1, sizeof(line1), "* E End Hour");
 		}
 
-		snprintf(line2, sizeof(line2), "  %02u:00-%02u:00", eveningStartHour,
-				eveningEndHour);
+		snprintf(line2, sizeof(line2), "  %02u:00-%02u:00", g_settings.eveningStartHour,
+				g_settings.eveningEndHour);
 		break;
 
 	case MENU_ITEM_MIN_TEMP:
@@ -264,7 +289,7 @@ static void Settings_DrawMenu(void) {
 			snprintf(line1, sizeof(line1), "* Min Temp");
 		}
 
-		snprintf(line2, sizeof(line2), "  %.1f degC", minTempC);
+		snprintf(line2, sizeof(line2), "  %.1f degC", g_settings.minTempC);
 		break;
 
 	case MENU_ITEM_MOISTURE_MIN:
@@ -273,7 +298,7 @@ static void Settings_DrawMenu(void) {
 		} else {
 			snprintf(line1, sizeof(line1), "* Moisture Min");
 		}
-		snprintf(line2, sizeof(line2), "  %.1f %%", moistureMinPct);
+		snprintf(line2, sizeof(line2), "  %.1f %%", g_settings.moistureMinPct);
 
 		break;
 
@@ -284,7 +309,12 @@ static void Settings_DrawMenu(void) {
 			snprintf(line1, sizeof(line1), "* Moisture Max");
 		}
 
-		snprintf(line2, sizeof(line2), "  %.1f %%", moistureMaxPct);
+		snprintf(line2, sizeof(line2), "  %.1f %%", g_settings.moistureMaxPct);
+		break;
+
+	case MENU_ITEM_DUMP_LOG:
+		snprintf(line1, sizeof(line1), "> Dump Log");
+		snprintf(line2, sizeof(line2), "  Press select");
 		break;
 
 	case MENU_ITEM_EXIT:
@@ -325,7 +355,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		downClick = 1;
 	}
 }
-
 
 static bool takeSelectClick(void) {
 	if (selectClick) {

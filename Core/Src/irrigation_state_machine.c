@@ -7,7 +7,6 @@
 
 #include "irrigation_state_machine.h"
 #include "logging.h"
-#include "main.h" // check, is main.h needed?
 #include "rtc.h"
 #include "capsense.h"
 #include "lm75b.h"
@@ -15,22 +14,23 @@
 #include "stdio.h"
 #include "settings_menu.h"
 #include "usart.h"
+#include "led.h"
 
-uint32_t nextCheckTime = 0;
-uint32_t pumpStartTime = 0;
-uint32_t soakStartTime = 0;
-uint16_t pumpCyclesSinceLastSample = 0;
-RTC_TimeTypeDef sTime;
-RTC_DateTypeDef sDate;
-
-bool justEnteredState;
-SystemState_t currentState = STATE_IDLE;
-float pct = 0.0f;
-
-uint32_t ledBlinkLastToggle = 0;
-bool ledBlinkState = false;
+static uint32_t nextCheckTime = 0;
+static uint32_t pumpStartTime = 0;
+static uint32_t soakStartTime = 0;
+static uint16_t pumpCyclesSinceLastSample = 0;
+static RTC_TimeTypeDef sTime;
+static RTC_DateTypeDef sDate;
+static SystemState_t currentState = STATE_IDLE;
+static bool justEnteredState = false;
 static uint8_t pumpCyclesThisCheck = 0;
 static bool selectWasHigh = false;
+
+
+
+static bool inWateringWindow(RTC_TimeTypeDef *t);
+static bool tankLevelOK(void);
 
 void Irrigation_Init(void) {
 	lcd_init();
@@ -47,6 +47,7 @@ void Irrigation_Tick(void) {
 	uint32_t now = HAL_GetTick();
 	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+	const Settings_t* cfg = Settings_Get();
 
 	switch (currentState) {
 	case STATE_IDLE: {
@@ -105,7 +106,7 @@ void Irrigation_Tick(void) {
 				currentState = STATE_IDLE;
 				break;
 			}
-			if (moisture >= moistureMinPct) {
+			if (moisture >= cfg->moistureMinPct) {
 				currentState = STATE_IDLE;
 				break;
 			}
@@ -151,8 +152,7 @@ void Irrigation_Tick(void) {
 
 			float moisture = getMoisture();
 			printf("STATE SOAK WAIT:  %f\r\n", moisture);
-			if (moisture
-					< moistureMaxPct&& pumpCyclesThisCheck < PUMP_CYCLES_MAX) {
+			if (moisture < cfg->moistureMaxPct&& pumpCyclesThisCheck < PUMP_CYCLES_MAX) {
 				currentState = STATE_PUMP_ON;
 			} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
 				currentState = STATE_ERROR;
@@ -199,44 +199,20 @@ void Irrigation_Tick(void) {
 	}
 }
 
-void setLED(int rState, int gState, int bState) {
-	HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, rState);
-	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, gState);
-	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, bState);
-}
-
-bool inWateringWindow(RTC_TimeTypeDef *t) {
-	if (t->Hours >= morningStartHour && t->Hours < morningEndHour)
+static bool inWateringWindow(RTC_TimeTypeDef *t) {
+	const Settings_t* cfg = Settings_Get();
+	if (t->Hours >= cfg->morningStartHour && t->Hours < cfg->morningEndHour)
 		return true;
 
-	if (t->Hours >= eveningStartHour && t->Hours < eveningEndHour)
+	if (t->Hours >= cfg->eveningStartHour && t->Hours < cfg->eveningEndHour)
 		return true;
 
 	return false;
 }
 
-bool tankLevelOK(void) {
+static bool tankLevelOK(void) {
 	return HAL_GPIO_ReadPin(LEVEL_RX_GPIO_Port, LEVEL_RX_Pin);  // HIGH = OK
 }
 
-void blinkLED(LedColor_t color, uint32_t intervalMs) {
-	uint32_t now = HAL_GetTick();
 
-	if ((now - ledBlinkLastToggle) >= intervalMs) {
-		ledBlinkLastToggle = now;
-		ledBlinkState = !ledBlinkState;
-		switch (color) {
-		case LED_RED:
-			HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, ledBlinkState);
-			break;
-		case LED_GREEN:
-			HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin,
-					ledBlinkState);
-			break;
-		case LED_BLUE:
-			HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, ledBlinkState);
-			break;
-		}
-	}
-}
 

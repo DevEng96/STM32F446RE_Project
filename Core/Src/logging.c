@@ -7,11 +7,12 @@
 
 #include "logging.h"
 #include <stdio.h>
+#include "rtc.h"
 
-LogEntry logBuffer[LOG_SAMPLES];
-uint16_t logIndex = 0;     // where the next sample will be written
-uint16_t logCount = 0;     // how many valid entries we have (<= LOG_SAMPLES)
-
+static LogEntry  logBuffer[LOG_SAMPLES];
+//LogEntry logBuffer[LOG_SAMPLES];
+static uint16_t logIndex = 0;     // where the next sample will be written
+static uint16_t logCount = 0;     // how many valid entries we have (<= LOG_SAMPLES)
 
 void logSample(float moisture, float temp, uint16_t pumpCycles) {
 	uint32_t now = 0;/* get from RTC, or HAL_GetTick()/1000 */
@@ -29,6 +30,19 @@ void logSample(float moisture, float temp, uint16_t pumpCycles) {
 	if (logCount < LOG_SAMPLES) {
 		logCount++;
 	}
+}
+
+void logDumpToUart() {
+
+	printf("\r\n--- LOG DUMP START ---\r\n");
+	for (uint16_t i = 0; i < logCount; i++) {
+		LogEntry *e = &logBuffer[i];
+		printf("%04u-%02u-%02u %02u:%02u, %.1f%%, %.1fC, %u cycles\r\n",
+				e->year, e->month, e->day, e->hour, e->minute, e->moisture_pct,
+				e->temperature, e->pumpCycles);
+	}
+	printf("--- LOG DUMP END ---\r\n\r\n");
+
 }
 
 //void dumpLog(void) {

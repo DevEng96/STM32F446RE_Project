@@ -30,6 +30,7 @@ extern "C" {
 
 /* USER CODE BEGIN Includes */
 
+
 /* USER CODE END Includes */
 
 extern RTC_HandleTypeDef hrtc;
@@ -41,6 +42,8 @@ extern RTC_HandleTypeDef hrtc;
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+void set_time(uint8_t hr, uint8_t min, uint8_t sec);
+void set_date(uint8_t year, uint8_t month, uint8_t date, uint8_t weekday);
 
 /* USER CODE END Prototypes */
 

@@ -1,1 +1,2 @@
-../Core/Src/logging.c:16:6:logSample	3
+../Core/Src/logging.c:17:6:logSample	3
+../Core/Src/logging.c:35:6:logDumpToUart	2

@@ -4,8 +4,11 @@
 extern ADC_HandleTypeDef hadc1; // use the ADC handle from main
 
 
-uint16_t dry_counts = 3000;   // measure in air & set
-uint16_t wet_counts = 1000;   // measure in water/very wet soil & set
+static uint16_t dry_counts = 3000;   // measure in air & set
+static uint16_t wet_counts = 1000;   // measure in water/very wet soil & set
+// if i want to change them later from elsewhere:
+//void Capsense_SetCalibration(uint16_t dry, uint16_t wet);
+//void Capsense_GetCalibration(uint16_t *dry, uint16_t *wet);
 
 uint16_t read_adc_once(void) {
 	HAL_ADC_Start(&hadc1);

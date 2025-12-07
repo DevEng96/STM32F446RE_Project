@@ -129,5 +129,35 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+void set_time(uint8_t hr, uint8_t min, uint8_t sec) {
+    RTC_TimeTypeDef sTime = {0};
+
+    sTime.Hours          = hr;
+    sTime.Minutes        = min;
+    sTime.Seconds        = sec;
+    sTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
+    sTime.StoreOperation = RTC_STOREOPERATION_RESET;
+
+    if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN) != HAL_OK) {
+        Error_Handler();
+    }
+}
+
+void set_date(uint8_t year, uint8_t month, uint8_t date, uint8_t weekday) {
+    // year: 0..99 (for 2000..2099)
+    RTC_DateTypeDef sDate = {0};
+
+    sDate.WeekDay = weekday;  // Monday = 1, Sunday = 7
+    sDate.Month   = month;    // 1..12
+    sDate.Date    = date;     // 1..31
+    sDate.Year    = year;     // e.g. 25 for 2025
+
+    if (HAL_RTC_SetDate(&hrtc, &sDate, RTC_FORMAT_BIN) != HAL_OK) {
+        Error_Handler();
+    }
+
+    // mark RTC as initialized
+    HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0x2345);
+}
 
 /* USER CODE END 1 */
