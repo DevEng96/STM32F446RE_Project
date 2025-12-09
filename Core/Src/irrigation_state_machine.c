@@ -29,6 +29,7 @@ static bool selectWasHigh = false;
 
 static bool inWateringWindow(RTC_TimeTypeDef *t);
 static bool tankLevelNOK(void);
+static ErrorCause_t errorCause = ERROR_NONE;
 
 void Irrigation_Init(void) {
 	lcd_init();
@@ -93,6 +94,7 @@ void Irrigation_Tick(void) {
 					"STATE CHECK CONDITIONS [%02u:%02u:%02u]: Moisture: %0.2f, Temp: %0.2f\r\n",
 					sTime.Hours, sTime.Minutes, sTime.Seconds, moisture, temp);
 			if (waterNOK) {
+				errorCause = ERROR_TANK_EMPTY;
 				currentState = STATE_ERROR;
 				justEnteredState = 1;
 				break;
@@ -123,12 +125,12 @@ void Irrigation_Tick(void) {
 	case STATE_PUMP_ON: {
 
 		if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-			// safety: make sure pump is OFF
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
-					GPIO_PIN_RESET);
-			currentState = STATE_IDLE;       // or STATE_ERROR if you prefer
+								GPIO_PIN_RESET);
+			currentState = STATE_ERROR;
+			errorCause = ERROR_PUMP_OVERRUN;
 			justEnteredState = 1;
-			printf("STATE PUMP: Max Pump Cycles Reached");
+			printf("STATE PUMP: Max Pump Cycles Reached\r\n");
 			break;
 		}
 
@@ -192,26 +194,77 @@ void Irrigation_Tick(void) {
 	}
 
 	case STATE_ERROR: {
+
 		if (justEnteredState) {
 			printf("STATE ERROR\r\n");
 			justEnteredState = 0;
-			setLED(1, 1, 1); // clear all leds
+			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
+					GPIO_PIN_RESET);
+			setLED(1, 1,1); // all off
 		}
 
-		HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_RESET);
-
-		if (tankLevelNOK()) {
+		switch (errorCause) {
+		case ERROR_TANK_EMPTY:
+			// Tank is empty: blink blue and auto-recover when tank is ok again
 			blinkLED(LED_BLUE, 500);
-		} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-			blinkLED(LED_RED, 500); // this never really reched / or used, when tanklevel -> ok it will just leave.
-		}
 
-		if (!tankLevelNOK()) {
+			if (!tankLevelNOK()) {  // tankLevel now OK
+				errorCause = ERROR_NONE;
+				currentState = STATE_IDLE;
+				justEnteredState = 1;
+			}
+			break;
+
+		case ERROR_PUMP_OVERRUN:
+			// Pump max cycles reached: blink red and REQUIRE MANUAL RESET
+			blinkLED(LED_RED, 500);
+
+			if (settings_takeSelectClick()) {
+				errorCause = ERROR_NONE;
+				pumpCyclesThisCheck = 0;
+				currentState = STATE_IDLE;
+				justEnteredState = 1;
+			}
+			float moisture = getMoisture();
+			if (moisture > cfg->moistureMaxPct + 5.0f) { // some hysteresis
+				errorCause = ERROR_NONE;
+				currentState = STATE_IDLE;
+				justEnteredState = 1;
+			}
+
+			break;
+
+		default:
+			// No known error cause, just go back to idle
 			currentState = STATE_IDLE;
 			justEnteredState = 1;
+			break;
 		}
+
 		break;
 	}
+
+//
+//		if (justEnteredState) {
+//			printf("STATE ERROR\r\n");
+//			justEnteredState = 0;
+//			setLED(1, 1, 1); // clear all leds
+//		}
+//
+//		HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_RESET);
+//
+//		if (tankLevelNOK()) {
+//			blinkLED(LED_BLUE, 500);
+//		} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
+//			blinkLED(LED_RED, 500); // this never really reched / or used, when tanklevel -> ok it will just leave.
+//		}
+//
+//		if (!tankLevelNOK()) {
+//			currentState = STATE_IDLE;
+//			justEnteredState = 1;
+//		}
+//		break;
+//	}
 	}
 }
 

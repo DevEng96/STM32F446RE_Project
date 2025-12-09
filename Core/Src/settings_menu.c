@@ -12,7 +12,8 @@
 #include "logging.h"
 #include "led.h"
 
-static uint32_t last_isr_ms = 0;   // debounce time from elsewhere
+//static uint32_t last_isr_ms = 0;   // debounce time from elsewhere
+static uint32_t lastMs = 0;
 
 static Settings_t g_settings = {
     .morningStartHour = 6,
@@ -45,7 +46,7 @@ static volatile uint8_t downClick = 0;
 static void Settings_DrawMenu(void);
 static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin);
 
-static bool takeSelectClick(void);
+
 static bool takeUpClick(void);
 static bool takeDownClick(void);
 
@@ -102,7 +103,7 @@ void Settings_Tick(void) {
 		}
 
 		// SELECT: either start editing, or if on EXIT, leave settings
-		if (takeSelectClick()) {
+		if (settings_takeSelectClick()) {
 			if (currentMenuItem == MENU_ITEM_EXIT) {
 				settingsDone = true;
 				return;
@@ -122,7 +123,7 @@ void Settings_Tick(void) {
 	// --- EDITING MODE ------------------------------------------------------
 
 	// Common handling: SELECT advances editing state
-	if (takeSelectClick()) {
+	if (settings_takeSelectClick()) {
 		if (editState == EDIT_STATE_VALUE1) {
 			// If this item has a second value, go there. Otherwise, back to browsing.
 			if (currentMenuItem == MENU_ITEM_WW_MORNING
@@ -323,26 +324,48 @@ static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin) {
 	return HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET; // shield pulls low, press = HIGH
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	uint32_t now = HAL_GetTick();
-	if (now - last_isr_ms < 20) {
-		return;   // simple debounce
-	}
-	last_isr_ms = now;
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+//	uint32_t now = HAL_GetTick();
+//	if (now - last_isr_ms < 20) {
+//		return;   // simple debounce
+//	}
+//	last_isr_ms = now;
+//
+//	if (GPIO_Pin == BTN_SELECT_Pin
+//			&& pressed(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)) {
+//		selectClick = 1;
+//	} else if (GPIO_Pin == BTN_UP_Pin
+//			&& pressed(BTN_UP_GPIO_Port, BTN_UP_Pin)) {
+//		upClick = 1;
+//	} else if (GPIO_Pin == BTN_DOWN_Pin
+//			&& pressed(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin)) {
+//		downClick = 1;
+//	}
+//}
 
-	if (GPIO_Pin == BTN_SELECT_Pin
-			&& pressed(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)) {
-		selectClick = 1;
-	} else if (GPIO_Pin == BTN_UP_Pin
-			&& pressed(BTN_UP_GPIO_Port, BTN_UP_Pin)) {
-		upClick = 1;
-	} else if (GPIO_Pin == BTN_DOWN_Pin
-			&& pressed(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin)) {
-		downClick = 1;
-	}
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    uint32_t now = HAL_GetTick();
+
+    // ===== SIMPLE DEBOUNCE =====
+    if (now - lastMs < 80) {      // 80ms is safe for mechanical buttons
+        return;                   // ignore bounce
+    }
+    lastMs = now;
+    // ===========================
+
+    if (GPIO_Pin == BTN_SELECT_Pin) {
+        selectClick = 1;
+    }
+    else if (GPIO_Pin == BTN_UP_Pin) {
+        upClick = 1;
+    }
+    else if (GPIO_Pin == BTN_DOWN_Pin) {
+        downClick = 1;
+    }
 }
 
-static bool takeSelectClick(void) {
+ bool settings_takeSelectClick(void) {
 	if (selectClick) {
 		selectClick = 0;
 		return true;

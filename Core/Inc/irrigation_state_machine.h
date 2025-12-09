@@ -21,6 +21,13 @@ typedef enum {
 	STATE_SETTINGS
 } SystemState_t;
 
+typedef enum {
+    ERROR_NONE = 0,
+    ERROR_TANK_EMPTY,
+    ERROR_PUMP_OVERRUN
+} ErrorCause_t;
+
+
 
 
 //#define CHECK_PERIOD_MS   (10UL * 60UL * 1000UL)  // 15 minutes
@@ -28,10 +35,11 @@ typedef enum {
 //#define PUMP_CYCLES_MAX	5
 //#define SOAK_WAIT_MS     (10UL*60UL*1000UL) // 10 minutes example
 
-#define CHECK_PERIOD_MS   (15UL * 1000UL)  // 15 seconds
-#define PUMP_ON_MS       (5UL*1000UL)   // 5 seconds example
-#define PUMP_CYCLES_MAX	5
-#define SOAK_WAIT_MS     (30UL*1000UL) // 30 minutes example
+#define CHECK_PERIOD_MS 	(10UL * 1000UL)
+#define PUMP_ON_MS			(5UL*1000UL)
+#define SOAK_WAIT_MS     	(5UL*1000UL)
+#define PUMP_CYCLES_MAX	3
+
 
 void Irrigation_Init(void);
 void Irrigation_Tick(void);

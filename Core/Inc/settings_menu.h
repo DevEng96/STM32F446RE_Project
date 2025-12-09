@@ -38,6 +38,7 @@ void Settings_Tick(void);
 bool Settings_IsDone(void);
 
 const Settings_t* Settings_Get(void);
+bool settings_takeSelectClick(void);
 
 // Settings values used by the irrigation logic
 //extern uint8_t morningStartHour;
