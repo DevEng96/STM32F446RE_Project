@@ -109,11 +109,15 @@ int main(void) {
 		set_date(25, 12, 9, 2); // y,m,d,weekday
 	}
 
+	set_time(11, 30, 00);       // HH, MM, SS
+	set_date(25, 12, 9, 2); // y,m,d,weekday
+
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	printf(" ***   Tomato Irrigation System Starting up...   ***\r\n");
+
+
 	while (1) {
 
 		Irrigation_Tick();

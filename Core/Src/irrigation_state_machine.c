@@ -29,6 +29,7 @@ static bool selectWasHigh = false;
 
 static bool inWateringWindow(RTC_TimeTypeDef *t);
 static bool tankLevelNOK(void);
+static void PrintSystemStatus(void);
 static ErrorCause_t errorCause = ERROR_NONE;
 
 void Irrigation_Init(void) {
@@ -40,6 +41,8 @@ void Irrigation_Init(void) {
 	setLED(1, 1, 1);
 	justEnteredState = 1;
 	nextCheckTime = HAL_GetTick() + CHECK_PERIOD_MS;
+	PrintSystemStatus();
+
 }
 
 void Irrigation_Tick(void) {
@@ -126,7 +129,7 @@ void Irrigation_Tick(void) {
 
 		if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
-								GPIO_PIN_RESET);
+					GPIO_PIN_RESET);
 			currentState = STATE_ERROR;
 			errorCause = ERROR_PUMP_OVERRUN;
 			justEnteredState = 1;
@@ -200,7 +203,7 @@ void Irrigation_Tick(void) {
 			justEnteredState = 0;
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
 					GPIO_PIN_RESET);
-			setLED(1, 1,1); // all off
+			setLED(1, 1, 1); // all off
 		}
 
 		switch (errorCause) {
@@ -243,28 +246,6 @@ void Irrigation_Tick(void) {
 
 		break;
 	}
-
-//
-//		if (justEnteredState) {
-//			printf("STATE ERROR\r\n");
-//			justEnteredState = 0;
-//			setLED(1, 1, 1); // clear all leds
-//		}
-//
-//		HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_RESET);
-//
-//		if (tankLevelNOK()) {
-//			blinkLED(LED_BLUE, 500);
-//		} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-//			blinkLED(LED_RED, 500); // this never really reched / or used, when tanklevel -> ok it will just leave.
-//		}
-//
-//		if (!tankLevelNOK()) {
-//			currentState = STATE_IDLE;
-//			justEnteredState = 1;
-//		}
-//		break;
-//	}
 	}
 }
 
@@ -281,5 +262,41 @@ static bool inWateringWindow(RTC_TimeTypeDef *t) {
 
 static bool tankLevelNOK(void) {
 	return HAL_GPIO_ReadPin(LEVEL_RX_GPIO_Port, LEVEL_RX_Pin);  // HIGH = OK
+}
+
+static void PrintSystemStatus(void) {
+	const Settings_t *cfg = Settings_Get();
+	RTC_TimeTypeDef t;
+	RTC_DateTypeDef d;
+
+	// Read the RTC
+	HAL_RTC_GetTime(&hrtc, &t, RTC_FORMAT_BIN);
+	HAL_RTC_GetDate(&hrtc, &d, RTC_FORMAT_BIN);
+
+	printf("\r\n");
+	printf("***********************************************\r\n");
+	printf("   Tomato Irrigation System Starting Up...\r\n");
+	printf("***********************************************\r\n");
+
+	printf("Current RTC Time : %02u:%02u:%02u\r\n", t.Hours, t.Minutes,
+			t.Seconds);
+
+	printf("Current RTC Date : %02u.%02u.%02u\r\n", d.Date, d.Month, d.Year);
+
+	printf("\r\n--- SYSTEM SETTINGS --------------\r\n");
+
+	printf("Morning Window    : %02u:00 - %02u:00\r\n", cfg->morningStartHour,
+			cfg->morningEndHour);
+
+	printf("Evening Window    : %02u:00 - %02u:00\r\n", cfg->eveningStartHour,
+			cfg->eveningEndHour);
+
+	printf("Minimum Temp      : %.1f °C\r\n", cfg->minTempC);
+
+	printf("Moisture Min      : %.1f %%\r\n", cfg->moistureMinPct);
+	printf("Moisture Max      : %.1f %%\r\n", cfg->moistureMaxPct);
+
+	printf("-------------------------------\r\n");
+	printf("\r\n");
 }
 

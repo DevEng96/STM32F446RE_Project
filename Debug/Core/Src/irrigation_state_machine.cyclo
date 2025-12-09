@@ -1,4 +1,5 @@
-../Core/Src/irrigation_state_machine.c:34:6:Irrigation_Init	1
-../Core/Src/irrigation_state_machine.c:45:6:Irrigation_Tick	32
-../Core/Src/irrigation_state_machine.c:271:13:inWateringWindow	5
-../Core/Src/irrigation_state_machine.c:282:13:tankLevelNOK	1
+../Core/Src/irrigation_state_machine.c:35:6:Irrigation_Init	1
+../Core/Src/irrigation_state_machine.c:48:6:Irrigation_Tick	32
+../Core/Src/irrigation_state_machine.c:274:13:inWateringWindow	5
+../Core/Src/irrigation_state_machine.c:285:13:tankLevelNOK	1
+../Core/Src/irrigation_state_machine.c:289:13:PrintSystemStatus	1
