@@ -28,10 +28,10 @@ typedef enum {
 //#define PUMP_CYCLES_MAX	5
 //#define SOAK_WAIT_MS     (10UL*60UL*1000UL) // 10 minutes example
 
-#define CHECK_PERIOD_MS   (15UL * 1000UL)  // 15 minutes
-#define PUMP_ON_MS       (5UL*1000UL)   // 10 seconds example
+#define CHECK_PERIOD_MS   (15UL * 1000UL)  // 15 seconds
+#define PUMP_ON_MS       (5UL*1000UL)   // 5 seconds example
 #define PUMP_CYCLES_MAX	5
-#define SOAK_WAIT_MS     (30UL*1000UL) // 10 minutes example
+#define SOAK_WAIT_MS     (30UL*1000UL) // 30 minutes example
 
 void Irrigation_Init(void);
 void Irrigation_Tick(void);

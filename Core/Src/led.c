@@ -7,13 +7,14 @@
 
 #include "led.h"
 
-uint32_t ledBlinkLastToggle = 0;
-bool ledBlinkState = false;
+static uint32_t ledBlinkLastToggle = 0;
+static bool     ledBlinkState      = false;
+
 
 void setLED(int rState, int gState, int bState) {
-	HAL_GPIO_WritePin(LED_RED_GPIO_Port, LED_RED_Pin, rState);
-	HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, gState);
-	HAL_GPIO_WritePin(LED_BLUE_GPIO_Port, LED_BLUE_Pin, bState);
+    HAL_GPIO_WritePin(LED_RED_GPIO_Port,   LED_RED_Pin,   rState ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, gState ? GPIO_PIN_SET : GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LED_BLUE_GPIO_Port,  LED_BLUE_Pin,  bState ? GPIO_PIN_SET : GPIO_PIN_RESET);
 }
 
 void blinkLED(LedColor_t color, uint32_t intervalMs) {

@@ -10,29 +10,19 @@
 #include "main.h"
 #include <stdio.h>
 #include "logging.h"
+#include "led.h"
 
 static uint32_t last_isr_ms = 0;   // debounce time from elsewhere
 
-// ----- Public setting variables (defined here, extern in header) -----
-//uint8_t morningStartHour = 6;
-//uint8_t morningEndHour = 8;
-//uint8_t eveningStartHour = 20;
-//uint8_t eveningEndHour = 22;
-//float minTempC = 10.0f;
-//float moistureMinPct = 25.0f;
-//float moistureMaxPct = 40.0f;
-
 static Settings_t g_settings = {
     .morningStartHour = 6,
-    .morningEndHour   = 8,
+    .morningEndHour   = 9,
     .eveningStartHour = 20,
     .eveningEndHour   = 22,
     .minTempC         = 10.0f,
-    .moistureMinPct   = 25.0f,
-    .moistureMaxPct   = 40.0f
+    .moistureMinPct   = 30.0f,
+    .moistureMaxPct   = 50.0f
 };
-
-
 
 
 // ----- Private state -----
@@ -59,9 +49,6 @@ static bool takeSelectClick(void);
 static bool takeUpClick(void);
 static bool takeDownClick(void);
 
-// LED helper from other module
-void setLED(int rState, int gState, int bState);
-
 void Settings_Init(void) {
 	// nothing yet
 }
@@ -70,7 +57,6 @@ const Settings_t* Settings_Get(void)
 {
     return &g_settings;
 }
-
 
 void Settings_Enter(void) {
 	settingsDone = false;

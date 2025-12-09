@@ -105,15 +105,15 @@ int main(void) {
 	if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x2345) {
 		// TODO: put "current" time & date here when flashing
 		// Example: 15:30:00 on 24 January 2025, Friday
-		set_time(15, 30, 00);       // HH, MM, SS
-		set_date(25, 12, 07, 7); // y,m,d,weekday
+		set_time(8, 00, 00);       // HH, MM, SS
+		set_date(25, 12, 9, 2); // y,m,d,weekday
 	}
 
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
-	printf("Tomato Irrigation System Starting up...\r\n");
+	printf(" ***   Tomato Irrigation System Starting up...   ***\r\n");
 	while (1) {
 
 		Irrigation_Tick();

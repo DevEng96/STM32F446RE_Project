@@ -27,10 +27,8 @@ static bool justEnteredState = false;
 static uint8_t pumpCyclesThisCheck = 0;
 static bool selectWasHigh = false;
 
-
-
 static bool inWateringWindow(RTC_TimeTypeDef *t);
-static bool tankLevelOK(void);
+static bool tankLevelNOK(void);
 
 void Irrigation_Init(void) {
 	lcd_init();
@@ -47,7 +45,7 @@ void Irrigation_Tick(void) {
 	uint32_t now = HAL_GetTick();
 	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-	const Settings_t* cfg = Settings_Get();
+	const Settings_t *cfg = Settings_Get();
 
 	switch (currentState) {
 	case STATE_IDLE: {
@@ -82,7 +80,7 @@ void Irrigation_Tick(void) {
 
 		float moisture = getMoisture();
 		float temp = readTemp();
-		bool waterOK = tankLevelOK();
+		bool waterNOK = tankLevelNOK();
 		bool window = inWateringWindow(&sTime);
 
 		if (justEnteredState) {
@@ -91,23 +89,28 @@ void Irrigation_Tick(void) {
 			pumpCyclesSinceLastSample = 0;
 			pumpCyclesThisCheck = 0;
 			justEnteredState = 0;
-			printf("STATE CHECK CONDITIONS [%02u:%02u:%02u]:  %0.2f  %0.2f\r\n",
+			printf(
+					"STATE CHECK CONDITIONS [%02u:%02u:%02u]: Moisture: %0.2f, Temp: %0.2f\r\n",
 					sTime.Hours, sTime.Minutes, sTime.Seconds, moisture, temp);
-
+			if (waterNOK) {
+				currentState = STATE_ERROR;
+				justEnteredState = 1;
+				break;
+			}
 			if (!window) {
 				currentState = STATE_IDLE;
+				justEnteredState = 1;
 				break;
 			}
-			if (!waterOK) {
-				currentState = STATE_ERROR;
-				break;
-			}
-			if (temp < 10.0f) {
+
+			if (temp < cfg->minTempC) {
 				currentState = STATE_IDLE;
+				justEnteredState = 1;
 				break;
 			}
 			if (moisture >= cfg->moistureMinPct) {
 				currentState = STATE_IDLE;
+				justEnteredState = 1;
 				break;
 			}
 			// All conditions satisfied → start watering
@@ -125,6 +128,7 @@ void Irrigation_Tick(void) {
 					GPIO_PIN_RESET);
 			currentState = STATE_IDLE;       // or STATE_ERROR if you prefer
 			justEnteredState = 1;
+			printf("STATE PUMP: Max Pump Cycles Reached");
 			break;
 		}
 
@@ -134,7 +138,7 @@ void Irrigation_Tick(void) {
 			pumpCyclesSinceLastSample++;
 			justEnteredState = 0;
 			pumpCyclesThisCheck++;
-			printf("STATE PUMP ON:  %u\r\n", pumpCyclesThisCheck);
+			printf("STATE PUMP ON:  %u Cycles\r\n", pumpCyclesThisCheck);
 		}
 		if ((int32_t) (now - pumpStartTime) >= (int32_t) PUMP_ON_MS) {
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
@@ -147,12 +151,17 @@ void Irrigation_Tick(void) {
 		break;
 	}
 	case STATE_SOAK_WAIT: {
+		if (justEnteredState) {
+			printf("STATE SOAK WAIT\r\n");
+			justEnteredState = 0;
+		}
 
 		if ((int32_t) (now - soakStartTime) >= (int32_t) SOAK_WAIT_MS) {
 
 			float moisture = getMoisture();
 			printf("STATE SOAK WAIT:  %f\r\n", moisture);
-			if (moisture < cfg->moistureMaxPct&& pumpCyclesThisCheck < PUMP_CYCLES_MAX) {
+			if ((moisture < cfg->moistureMaxPct)
+					&& (pumpCyclesThisCheck < PUMP_CYCLES_MAX)) {
 				currentState = STATE_PUMP_ON;
 			} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
 				currentState = STATE_ERROR;
@@ -168,6 +177,7 @@ void Irrigation_Tick(void) {
 
 		if (justEnteredState) {
 			Settings_Enter();
+			printf("STATE SETTINGS\r\n");
 			justEnteredState = 0;
 		}
 
@@ -182,15 +192,21 @@ void Irrigation_Tick(void) {
 	}
 
 	case STATE_ERROR: {
+		if (justEnteredState) {
+			printf("STATE ERROR\r\n");
+			justEnteredState = 0;
+			setLED(1, 1, 1); // clear all leds
+		}
 
 		HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_RESET);
 
-		if (!tankLevelOK()) {
+		if (tankLevelNOK()) {
 			blinkLED(LED_BLUE, 500);
 		} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-			blinkLED(LED_RED, 500);
+			blinkLED(LED_RED, 500); // this never really reched / or used, when tanklevel -> ok it will just leave.
 		}
-		if (tankLevelOK()) {
+
+		if (!tankLevelNOK()) {
 			currentState = STATE_IDLE;
 			justEnteredState = 1;
 		}
@@ -200,7 +216,7 @@ void Irrigation_Tick(void) {
 }
 
 static bool inWateringWindow(RTC_TimeTypeDef *t) {
-	const Settings_t* cfg = Settings_Get();
+	const Settings_t *cfg = Settings_Get();
 	if (t->Hours >= cfg->morningStartHour && t->Hours < cfg->morningEndHour)
 		return true;
 
@@ -210,9 +226,7 @@ static bool inWateringWindow(RTC_TimeTypeDef *t) {
 	return false;
 }
 
-static bool tankLevelOK(void) {
+static bool tankLevelNOK(void) {
 	return HAL_GPIO_ReadPin(LEVEL_RX_GPIO_Port, LEVEL_RX_Pin);  // HIGH = OK
 }
-
-
 
