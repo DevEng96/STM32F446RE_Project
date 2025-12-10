@@ -12,7 +12,7 @@
 #define LOG_SAMPLES   (4 * 24 * 7)   // 672
 typedef struct {
 	uint32_t timestamp;   // e.g. UNIX time or minutes since start
-	float moisture_pct;   // 0..100%
+	float moisturePct;   // 0..100%
 	float temperature;    // °C
 	uint16_t pumpCycles;  // cycles since last sample, or cumulative
 	uint16_t year;
@@ -22,7 +22,7 @@ typedef struct {
 	uint16_t minute;
 } LogEntry;
 
-void logSample(float moisture, float temp, uint16_t pumpCycles);
-void logDumpToUart();
+void Log_Sample(float moisture, float temp, uint16_t pumpCycles);
+void Log_DumpToUart();
 
 #endif /* INC_LOGGING_H_ */

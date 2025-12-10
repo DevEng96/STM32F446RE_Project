@@ -1,13 +1,12 @@
-/*
- * settings_menu.c
- *
- *  Created on: Nov 30, 2025
- *      Author: leoni
+/**
+ * @file    settings_menu.c
+ * @brief
+ * @author  Leoni
+ * @date    2025-11-30
  */
 
 #include "settings_menu.h"
 #include "lcd_driver.h"
-#include "main.h"
 #include <stdio.h>
 #include "logging.h"
 #include "led.h"
@@ -26,29 +25,34 @@ static Settings_t g_settings = {
 };
 
 
-// ----- Private state -----
-static MenuItem_t currentMenuItem = MENU_ITEM_WW_MORNING;
-static bool settingsDone = false;
+/* Private static state --------------------------------------------------- */
 
-typedef enum {
-	EDIT_STATE_NONE, EDIT_STATE_VALUE1, EDIT_STATE_VALUE2
+// Menu state
+static MenuItem_t   currentMenuItem = MENU_ITEM_WW_MORNING;
+static bool         settingsDone    = false;
+
+typedef enum
+{
+    EDIT_STATE_NONE = 0,
+    EDIT_STATE_VALUE1,
+    EDIT_STATE_VALUE2
 } EditState_t;
 
-static EditState_t editState = EDIT_STATE_NONE;
+static EditState_t  editState       = EDIT_STATE_NONE;
 
-// button click flags (set in ISR, read+clear in Settings_Tick)
+// Button click flags (set in ISR, read & cleared in Settings_Tick)
 static volatile uint8_t selectClick = 0;
-static volatile uint8_t upClick = 0;
-static volatile uint8_t downClick = 0;
+static volatile uint8_t upClick     = 0;
+static volatile uint8_t downClick   = 0;
 
-// ----- Private helper prototypes -----
+/* Private static function prototypes ------------------------------------ */
 
-static void Settings_DrawMenu(void);
-static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin);
+static void     DrawMenu(void);
+//static uint8_t  Pressed(GPIO_TypeDef *port, uint16_t pin);
+static inline uint8_t Pressed(GPIO_TypeDef *port, uint16_t pin);
 
-
-static bool takeUpClick(void);
-static bool takeDownClick(void);
+static bool     TakeUpClick(void);
+static bool     TakeDownClick(void);
 
 void Settings_Init(void) {
 	// nothing yet
@@ -69,14 +73,14 @@ void Settings_Enter(void) {
 	upClick = 0;
 	downClick = 0;
 
-	setLED(0, 1, 0);   // e.g. purple in settings
-	Settings_DrawMenu();
+	LED_Set(0, 1, 0);   // e.g. purple in settings
+	DrawMenu();
 }
 
 void Settings_Leave(void) {
 	lcd_clear();
 	lcd_show();
-	setLED(1, 0, 1); // set green again for main menu
+	LED_Set(1, 0, 1); // set green again for main menu
 }
 
 bool Settings_IsDone(void) {
@@ -88,32 +92,32 @@ void Settings_Tick(void) {
 	if (editState == EDIT_STATE_NONE) {
 
 		// Move through menu with UP/DOWN
-		if (takeUpClick()) {
+		if (TakeUpClick()) {
 			if (currentMenuItem > 0)
 				currentMenuItem--;
 			else
 				currentMenuItem = MENU_ITEM_COUNT - 1;
-			Settings_DrawMenu();
-		} else if (takeDownClick()) {
+			DrawMenu();
+		} else if (TakeDownClick()) {
 			if (currentMenuItem < MENU_ITEM_COUNT - 1)
 				currentMenuItem++;
 			else
 				currentMenuItem = 0;
-			Settings_DrawMenu();
+			DrawMenu();
 		}
 
 		// SELECT: either start editing, or if on EXIT, leave settings
-		if (settings_takeSelectClick()) {
+		if (Settings_TakeSelectClick()) {
 			if (currentMenuItem == MENU_ITEM_EXIT) {
 				settingsDone = true;
 				return;
 			} else if (currentMenuItem == MENU_ITEM_DUMP_LOG) {
-				logDumpToUart();
+				Log_DumpToUart();
 				// maybe print “Done.” or flash LED
 				return;
 			} else {
 				editState = EDIT_STATE_VALUE1; // start editing first value
-				Settings_DrawMenu();     // redraw with edit hint if desired
+				DrawMenu();     // redraw with edit hint if desired
 			}
 		}
 
@@ -123,7 +127,7 @@ void Settings_Tick(void) {
 	// --- EDITING MODE ------------------------------------------------------
 
 	// Common handling: SELECT advances editing state
-	if (settings_takeSelectClick()) {
+	if (Settings_TakeSelectClick()) {
 		if (editState == EDIT_STATE_VALUE1) {
 			// If this item has a second value, go there. Otherwise, back to browsing.
 			if (currentMenuItem == MENU_ITEM_WW_MORNING
@@ -137,7 +141,7 @@ void Settings_Tick(void) {
 			editState = EDIT_STATE_NONE;
 		}
 
-		Settings_DrawMenu();
+		DrawMenu();
 		return; // we don't change values on the same tick as a select
 	}
 
@@ -148,19 +152,19 @@ void Settings_Tick(void) {
 	case MENU_ITEM_WW_MORNING:
 		if (editState == EDIT_STATE_VALUE1) {
 			// edit start hour
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.morningStartHour = (g_settings.morningStartHour + 1) % 24;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.morningStartHour = (g_settings.morningStartHour + 23) % 24;
 				changed = true;
 			}
 		} else if (editState == EDIT_STATE_VALUE2) {
 			// edit end hour
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.morningEndHour = (g_settings.morningEndHour + 1) % 24;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.morningEndHour = (g_settings.morningEndHour + 23) % 24;
 				changed = true;
 			}
@@ -170,19 +174,19 @@ void Settings_Tick(void) {
 	case MENU_ITEM_WW_EVENING:
 		if (editState == EDIT_STATE_VALUE1) {
 			// edit start hour
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.eveningStartHour = (g_settings.eveningStartHour + 1) % 24;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.eveningStartHour = (g_settings.eveningStartHour + 23) % 24;
 				changed = true;
 			}
 		} else if (editState == EDIT_STATE_VALUE2) {
 			// edit end hour
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.eveningEndHour = (g_settings.eveningEndHour + 1) % 24;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.eveningEndHour = (g_settings.eveningEndHour + 23) % 24;
 				changed = true;
 			}
@@ -191,10 +195,10 @@ void Settings_Tick(void) {
 
 	case MENU_ITEM_MIN_TEMP:
 		if (editState == EDIT_STATE_VALUE1) {
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.minTempC += 0.5f;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.minTempC -= 0.5f;
 				changed = true;
 			}
@@ -203,10 +207,10 @@ void Settings_Tick(void) {
 
 	case MENU_ITEM_MOISTURE_MIN:
 		if (editState == EDIT_STATE_VALUE1) {
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.moistureMinPct += 1.0f;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.moistureMinPct -= 1.0f;
 				changed = true;
 			}
@@ -215,10 +219,10 @@ void Settings_Tick(void) {
 
 	case MENU_ITEM_MOISTURE_MAX:
 		if (editState == EDIT_STATE_VALUE1) {
-			if (takeUpClick()) {
+			if (TakeUpClick()) {
 				g_settings.moistureMaxPct += 1.0f;
 				changed = true;
-			} else if (takeDownClick()) {
+			} else if (TakeDownClick()) {
 				g_settings.moistureMaxPct -= 1.0f;
 				changed = true;
 			}
@@ -232,11 +236,11 @@ void Settings_Tick(void) {
 	}
 
 	if (changed) {
-		Settings_DrawMenu();
+		DrawMenu();
 	}
 }
 
-static void Settings_DrawMenu(void) {
+static void DrawMenu(void) {
 	lcd_clear();
 
 	char line1[32];
@@ -320,7 +324,7 @@ static void Settings_DrawMenu(void) {
 	lcd_show();
 }
 
-static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin) {
+static inline uint8_t Pressed(GPIO_TypeDef *port, uint16_t pin) {
 	return HAL_GPIO_ReadPin(port, pin) == GPIO_PIN_SET; // shield pulls low, press = HIGH
 }
 
@@ -332,13 +336,13 @@ static inline uint8_t pressed(GPIO_TypeDef *port, uint16_t pin) {
 //	last_isr_ms = now;
 //
 //	if (GPIO_Pin == BTN_SELECT_Pin
-//			&& pressed(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)) {
+//			&& Pressed(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)) {
 //		selectClick = 1;
 //	} else if (GPIO_Pin == BTN_UP_Pin
-//			&& pressed(BTN_UP_GPIO_Port, BTN_UP_Pin)) {
+//			&& Pressed(BTN_UP_GPIO_Port, BTN_UP_Pin)) {
 //		upClick = 1;
 //	} else if (GPIO_Pin == BTN_DOWN_Pin
-//			&& pressed(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin)) {
+//			&& Pressed(BTN_DOWN_GPIO_Port, BTN_DOWN_Pin)) {
 //		downClick = 1;
 //	}
 //}
@@ -365,21 +369,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
 }
 
- bool settings_takeSelectClick(void) {
+ bool Settings_TakeSelectClick(void) {
 	if (selectClick) {
 		selectClick = 0;
 		return true;
 	}
 	return false;
 }
-static bool takeUpClick(void) {
+static bool TakeUpClick(void) {
 	if (upClick) {
 		upClick = 0;
 		return true;
 	}
 	return false;
 }
-static bool takeDownClick(void) {
+static bool TakeDownClick(void) {
 	if (downClick) {
 		downClick = 0;
 		return true;

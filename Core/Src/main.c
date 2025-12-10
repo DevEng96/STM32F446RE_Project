@@ -102,15 +102,15 @@ int main(void) {
 	MX_RTC_Init();
 	/* USER CODE BEGIN 2 */
 	Irrigation_Init();
-	if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x2345) {
-		// TODO: put "current" time & date here when flashing
-		// Example: 15:30:00 on 24 January 2025, Friday
-		set_time(8, 00, 00);       // HH, MM, SS
-		set_date(25, 12, 9, 2); // y,m,d,weekday
-	}
+//	if (HAL_RTCEx_BKUPRead(&hrtc, RTC_BKP_DR1) != 0x2345) {
+//		// TODO: put "current" time & date here when flashing
+//		// Example: 15:30:00 on 24 January 2025, Friday
+//		RTC_SetTime(8, 00, 00);       // HH, MM, SS
+//		RTC_SetDate(25, 12, 9, 2); // y,m,d,weekday
+//	}
 
-	set_time(11, 30, 00);       // HH, MM, SS
-	set_date(25, 12, 9, 2); // y,m,d,weekday
+	RTC_SetTime(11, 30, 00);       // HH, MM, SS
+	RTC_SetDate(25, 12, 9, 2); // y,m,d,weekday
 
 	/* USER CODE END 2 */
 

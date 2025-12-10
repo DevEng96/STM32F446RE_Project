@@ -129,7 +129,7 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 }
 
 /* USER CODE BEGIN 1 */
-void set_time(uint8_t hr, uint8_t min, uint8_t sec) {
+void RTC_SetTime(uint8_t hr, uint8_t min, uint8_t sec) {
     RTC_TimeTypeDef sTime = {0};
 
     sTime.Hours          = hr;
@@ -143,7 +143,7 @@ void set_time(uint8_t hr, uint8_t min, uint8_t sec) {
     }
 }
 
-void set_date(uint8_t year, uint8_t month, uint8_t date, uint8_t weekday) {
+void RTC_SetDate(uint8_t year, uint8_t month, uint8_t date, uint8_t weekday) {
     // year: 0..99 (for 2000..2099)
     RTC_DateTypeDef sDate = {0};
 

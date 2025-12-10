@@ -1,8 +1,8 @@
-/*
- * irrigation_state_machine.c
- *
- *  Created on: Nov 30, 2025
- *      Author: leoni
+/**
+ * @file    irrigation_state_machine.c
+ * @brief
+ * @author  Leoni
+ * @date    2025-11-30
  */
 
 #include "irrigation_state_machine.h"
@@ -16,21 +16,33 @@
 #include "usart.h"
 #include "led.h"
 
+
+/* Private static state --------------------------------------------------- */
+
+// High-level system state
+static SystemState_t currentState = STATE_IDLE;
+static bool justEnteredState = false;
+static ErrorCause_t errorCause = ERROR_NONE;
+
+// Time / date
+static RTC_TimeTypeDef sTime;
+static RTC_DateTypeDef sDate;
+
+// Timing control (using HAL_GetTick)
 static uint32_t nextCheckTime = 0;
 static uint32_t pumpStartTime = 0;
 static uint32_t soakStartTime = 0;
-static uint16_t pumpCyclesSinceLastSample = 0;
-static RTC_TimeTypeDef sTime;
-static RTC_DateTypeDef sDate;
-static SystemState_t currentState = STATE_IDLE;
-static bool justEnteredState = false;
-static uint8_t pumpCyclesThisCheck = 0;
-static bool selectWasHigh = false;
 
-static bool inWateringWindow(RTC_TimeTypeDef *t);
-static bool tankLevelNOK(void);
+// Pump cycle tracking
+static uint16_t pumpCyclesSinceLastSample = 0;
+static uint8_t pumpCyclesThisCheck = 0;
+
+
+/* Private static functions ---------------------------------------------- */
+
+static bool InWateringWindow(RTC_TimeTypeDef *t);
+static bool TankLevelOk(void);
 static void PrintSystemStatus(void);
-static ErrorCause_t errorCause = ERROR_NONE;
 
 void Irrigation_Init(void) {
 	lcd_init();
@@ -38,7 +50,7 @@ void Irrigation_Init(void) {
 	lcd_show();
 	Settings_Init();
 	HAL_GPIO_WritePin(LEVEL_TX_GPIO_Port, LEVEL_TX_Pin, 1);
-	setLED(1, 1, 1);
+	LED_Set(1, 1, 1);
 	justEnteredState = 1;
 	nextCheckTime = HAL_GetTick() + CHECK_PERIOD_MS;
 	PrintSystemStatus();
@@ -55,7 +67,7 @@ void Irrigation_Tick(void) {
 	case STATE_IDLE: {
 		if (justEnteredState) {
 			printf("STATE IDLE\r\n");
-			setLED(1, 0, 1);
+			LED_Set(1, 0, 1);
 			justEnteredState = 0;
 		}
 		if ((int32_t) (now - nextCheckTime) >= 0) { // signed trick for wraparound
@@ -63,40 +75,31 @@ void Irrigation_Tick(void) {
 			nextCheckTime = now + CHECK_PERIOD_MS;  // schedule next check
 			justEnteredState = 1;
 		}
-		bool selNow = (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
-				== GPIO_PIN_SET);
-//		if (HAL_GPIO_ReadPin(BTN_SELECT_GPIO_Port, BTN_SELECT_Pin)
-//				== GPIO_PIN_SET) {
-//			currentState = STATE_SETTINGS;
-//			justEnteredState = 1;
-//		}
-		if (!selectWasHigh && selNow) {
+
+		if (Settings_TakeSelectClick()) {
 			currentState = STATE_SETTINGS;
 			justEnteredState = 1;
 		}
-
-		// remember for next tick
-		selectWasHigh = selNow;
 		break;
 	}
 
 	case STATE_CHECK_CONDITIONS: {
 
-		float moisture = getMoisture();
+		float moisture = Capsense_GetMoisture();
 		float temp = readTemp();
-		bool waterNOK = tankLevelNOK();
-		bool window = inWateringWindow(&sTime);
+		bool waterOK = TankLevelOk();
+		bool window = InWateringWindow(&sTime);
 
 		if (justEnteredState) {
 
-			logSample(moisture, temp, pumpCyclesSinceLastSample);
+			Log_Sample(moisture, temp, pumpCyclesSinceLastSample);
 			pumpCyclesSinceLastSample = 0;
 			pumpCyclesThisCheck = 0;
 			justEnteredState = 0;
 			printf(
 					"STATE CHECK CONDITIONS [%02u:%02u:%02u]: Moisture: %0.2f, Temp: %0.2f\r\n",
 					sTime.Hours, sTime.Minutes, sTime.Seconds, moisture, temp);
-			if (waterNOK) {
+			if (!waterOK) {
 				errorCause = ERROR_TANK_EMPTY;
 				currentState = STATE_ERROR;
 				justEnteredState = 1;
@@ -118,7 +121,7 @@ void Irrigation_Tick(void) {
 				justEnteredState = 1;
 				break;
 			}
-			// All conditions satisfied → start watering
+			// All conditions satisfied start watering
 			currentState = STATE_PUMP_ON;
 			justEnteredState = 1;
 			break;
@@ -152,7 +155,6 @@ void Irrigation_Tick(void) {
 			currentState = STATE_SOAK_WAIT;
 			justEnteredState = 1;
 		}
-		//			check max cycle counts
 		break;
 	}
 	case STATE_SOAK_WAIT: {
@@ -163,13 +165,18 @@ void Irrigation_Tick(void) {
 
 		if ((int32_t) (now - soakStartTime) >= (int32_t) SOAK_WAIT_MS) {
 
-			float moisture = getMoisture();
+			float moisture = Capsense_GetMoisture();
 			printf("STATE SOAK WAIT:  %f\r\n", moisture);
-			if ((moisture < cfg->moistureMaxPct)
+			if (TankLevelOk()) {
+				currentState = STATE_ERROR;
+				errorCause = ERROR_TANK_EMPTY;
+			} else if ((moisture < cfg->moistureMaxPct)
 					&& (pumpCyclesThisCheck < PUMP_CYCLES_MAX)) {
 				currentState = STATE_PUMP_ON;
 			} else if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
 				currentState = STATE_ERROR;
+				errorCause = ERROR_PUMP_OVERRUN;
+
 			} else {
 				currentState = STATE_CHECK_CONDITIONS;
 			}
@@ -200,18 +207,19 @@ void Irrigation_Tick(void) {
 
 		if (justEnteredState) {
 			printf("STATE ERROR\r\n");
-			justEnteredState = 0;
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
 					GPIO_PIN_RESET);
-			setLED(1, 1, 1); // all off
+			LED_Set(1, 1, 1); // all off
 		}
 
 		switch (errorCause) {
 		case ERROR_TANK_EMPTY:
-			// Tank is empty: blink blue and auto-recover when tank is ok again
-			blinkLED(LED_BLUE, 500);
-
-			if (!tankLevelNOK()) {  // tankLevel now OK
+			LED_Blink(LED_BLUE, 500);
+			if (justEnteredState) {
+				printf("--Tank Empty\r\n");
+				justEnteredState = 0;
+			}
+			if (TankLevelOk()) {
 				errorCause = ERROR_NONE;
 				currentState = STATE_IDLE;
 				justEnteredState = 1;
@@ -219,17 +227,19 @@ void Irrigation_Tick(void) {
 			break;
 
 		case ERROR_PUMP_OVERRUN:
-			// Pump max cycles reached: blink red and REQUIRE MANUAL RESET
-			blinkLED(LED_RED, 500);
-
-			if (settings_takeSelectClick()) {
+			LED_Blink(LED_RED, 500);
+			if (justEnteredState) {
+				printf("--Pump Overrun\r\n");
+				justEnteredState = 0;
+			}
+			if (Settings_TakeSelectClick()) {
 				errorCause = ERROR_NONE;
 				pumpCyclesThisCheck = 0;
 				currentState = STATE_IDLE;
 				justEnteredState = 1;
 			}
-			float moisture = getMoisture();
-			if (moisture > cfg->moistureMaxPct + 5.0f) { // some hysteresis
+			float moisture = Capsense_GetMoisture();
+			if (moisture > cfg->moistureMaxPct + 5.0f) { // hysteresis
 				errorCause = ERROR_NONE;
 				currentState = STATE_IDLE;
 				justEnteredState = 1;
@@ -249,7 +259,7 @@ void Irrigation_Tick(void) {
 	}
 }
 
-static bool inWateringWindow(RTC_TimeTypeDef *t) {
+static bool InWateringWindow(RTC_TimeTypeDef *t) {
 	const Settings_t *cfg = Settings_Get();
 	if (t->Hours >= cfg->morningStartHour && t->Hours < cfg->morningEndHour)
 		return true;
@@ -260,7 +270,7 @@ static bool inWateringWindow(RTC_TimeTypeDef *t) {
 	return false;
 }
 
-static bool tankLevelNOK(void) {
+static bool TankLevelOk(void) {
 	return HAL_GPIO_ReadPin(LEVEL_RX_GPIO_Port, LEVEL_RX_Pin);  // HIGH = OK
 }
 

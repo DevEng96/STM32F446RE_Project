@@ -10,11 +10,10 @@
 #include "rtc.h"
 
 static LogEntry logBuffer[LOG_SAMPLES];
-//LogEntry logBuffer[LOG_SAMPLES];
 static uint16_t logIndex = 0;     // where the next sample will be written
 static uint16_t logCount = 0; // how many valid entries we have (<= LOG_SAMPLES)
 
-void logSample(float moisture, float temp, uint16_t pumpCycles) {
+void Log_Sample(float moisture, float temp, uint16_t pumpCycles) {
     RTC_TimeTypeDef t;
     RTC_DateTypeDef d;
 
@@ -31,7 +30,7 @@ void logSample(float moisture, float temp, uint16_t pumpCycles) {
     uint32_t now = (uint32_t)t.Hours * 3600u + (uint32_t)t.Minutes * 60u + t.Seconds;
 
     logBuffer[logIndex].timestamp     = now;
-    logBuffer[logIndex].moisture_pct  = moisture;
+    logBuffer[logIndex].moisturePct  = moisture;
     logBuffer[logIndex].temperature   = temp;
     logBuffer[logIndex].pumpCycles    = pumpCycles;
 
@@ -53,31 +52,14 @@ void logSample(float moisture, float temp, uint16_t pumpCycles) {
     }
 }
 
-void logDumpToUart() {
+void Log_DumpToUart() {
 
 	printf("\r\n--- LOG DUMP START ---\r\n");
 	for (uint16_t i = 0; i < logCount; i++) {
 		LogEntry *e = &logBuffer[i];
 		printf("%04u-%02u-%02u %02u:%02u, %.1f%%, %.1fC, %u cycles\r\n",
-				e->year, e->month, e->day, e->hour, e->minute, e->moisture_pct,
+				e->year, e->month, e->day, e->hour, e->minute, e->moisturePct,
 				e->temperature, e->pumpCycles);
 	}
 	printf("--- LOG DUMP END   ---\r\n\r\n");
-
 }
-
-//void dumpLog(void) {
-//	uint16_t i;
-//	uint16_t idx = (logCount < LOG_SAMPLES) ? 0 : logIndex; // when full, logIndex points to oldest
-//
-//	for (i = 0; i < logCount; i++) {
-//		LogEntry *e = &logBuffer[idx];
-//
-//		printf("%lu,%0.1f,%0.1f,%u\r\n", (unsigned long) e->timestamp,
-//				e->moisture_pct, e->temperature, e->pumpCycles);
-//
-//		idx++;
-//		if (idx >= LOG_SAMPLES)
-//			idx = 0;
-//	}
-//}

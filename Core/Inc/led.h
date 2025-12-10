@@ -1,8 +1,8 @@
-/*
- * led.h
- *
- *  Created on: Dec 7, 2025
- *      Author: leoni
+/**
+ * @file    led.h
+ * @brief
+ * @author  Leoni
+ * @date    2025-11-30
  */
 
 #ifndef INC_LED_H_
@@ -10,16 +10,14 @@
 
 #include "gpio.h"
 #include "stdint.h"
-//#include "led.h"
-//#include "main.h"
 #include <stdint.h>
 #include <stdbool.h>
 
 
 typedef enum {
 	LED_RED, LED_GREEN, LED_BLUE
-} LedColor_t;
+} LED_Color_t;
 
-void setLED(int rState, int gState, int bState);
-void blinkLED(LedColor_t color, uint32_t intervalMs);
+void LED_Set(int rState, int gState, int bState);
+void LED_Blink(LED_Color_t color, uint32_t intervalMs);
 #endif /* INC_LED_H_ */

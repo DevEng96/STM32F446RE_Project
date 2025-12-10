@@ -1,5 +1,8 @@
-/*
- * settings_menu.h
+/**
+ * @file    settings_menu.h
+ * @brief
+ * @author  Leoni
+ * @date    2025-11-30
  */
 
 #ifndef INC_SETTINGS_MENU_H_
@@ -30,7 +33,6 @@ typedef struct {
     float   moistureMaxPct;
 } Settings_t;
 
-// Public API of the settings module
 void Settings_Init(void);
 void Settings_Enter(void);
 void Settings_Leave(void);
@@ -38,17 +40,6 @@ void Settings_Tick(void);
 bool Settings_IsDone(void);
 
 const Settings_t* Settings_Get(void);
-bool settings_takeSelectClick(void);
-
-// Settings values used by the irrigation logic
-//extern uint8_t morningStartHour;
-//extern uint8_t morningEndHour;
-//extern uint8_t eveningStartHour;
-//extern uint8_t eveningEndHour;
-//extern float   minTempC;
-//extern float   moistureMinPct;
-//extern float   moistureMaxPct;
-
-
+bool Settings_TakeSelectClick(void);
 
 #endif /* INC_SETTINGS_MENU_H_ */
