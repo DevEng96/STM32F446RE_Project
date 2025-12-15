@@ -19,7 +19,9 @@
 #include "capsense.h"
 #include "lm75b.h"
 #include "led.h"
+#include "tim.h"
 
+extern volatile uint32_t g_ms;
 
 
 /* Private static state --------------------------------------------------- */
@@ -57,14 +59,14 @@ void Irrigation_Init(void) {
 	HAL_GPIO_WritePin(LEVEL_TX_GPIO_Port, LEVEL_TX_Pin, 1);
 	LED_Set(1, 1, 1);
 	justEnteredState = 1;
-	nextCheckTime = HAL_GetTick() + CHECK_PERIOD_MS;
+	nextCheckTime = g_ms + CHECK_PERIOD_MS;
 	PrintSystemStatus();
 
 }
 
 void Irrigation_Tick(void) {
 	//todo implement HW timer for further development
-	uint32_t now = HAL_GetTick();
+	uint32_t now = g_ms;
 	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
 	const Settings_t *cfg = Settings_Get();

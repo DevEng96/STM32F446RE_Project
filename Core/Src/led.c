@@ -11,6 +11,8 @@ static uint32_t ledBlinkLastToggle = 0;
 static bool     ledBlinkState      = false;
 
 
+
+
 void LED_Set(int rState, int gState, int bState) {
     HAL_GPIO_WritePin(LED_RED_GPIO_Port,   LED_RED_Pin,   rState ? GPIO_PIN_SET : GPIO_PIN_RESET);
     HAL_GPIO_WritePin(LED_GREEN_GPIO_Port, LED_GREEN_Pin, gState ? GPIO_PIN_SET : GPIO_PIN_RESET);
