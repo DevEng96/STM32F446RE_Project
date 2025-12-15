@@ -1,8 +1,8 @@
-/*
- * logging.h
- *
- *  Created on: Nov 30, 2025
- *      Author: leoni
+/**
+ * @file    logging.h
+ * @brief
+ * @author  Leoni
+ * @date    2025-11-30
  */
 
 #ifndef INC_LOGGING_H_
@@ -11,10 +11,10 @@
 
 #define LOG_SAMPLES   (4 * 24 * 7)   // 672
 typedef struct {
-	uint32_t timestamp;   // e.g. UNIX time or minutes since start
-	float moisturePct;   // 0..100%
-	float temperature;    // °C
-	uint16_t pumpCycles;  // cycles since last sample, or cumulative
+	uint32_t timestamp;
+	float moisturePct;
+	float temperature;
+	uint16_t pumpCycles;
 	uint16_t year;
 	uint16_t month;
 	uint16_t day;

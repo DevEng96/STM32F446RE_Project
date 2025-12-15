@@ -7,9 +7,8 @@
 #ifndef __CAPSENSE_H
 #define __CAPSENSE_H
 
-#include "stm32f4xx_hal.h"   // for ADC_HandleTypeDef, HAL_ADC_*
-#include <stdint.h>          // for uint16_t, uint8_t
-
+#include "stm32f4xx_hal.h"
+#include <stdint.h>
 
 uint16_t Capsense_AdcOnce(void);
 uint16_t Capsense_AdcReadAvg(uint8_t samples);

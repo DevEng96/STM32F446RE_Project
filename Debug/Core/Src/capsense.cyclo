@@ -1,4 +1,4 @@
-../Core/Src/capsense.c:13:10:read_adc_once	1
-../Core/Src/capsense.c:21:10:read_adc_avg	2
-../Core/Src/capsense.c:29:7:adc_counts_to_volt	1
-../Core/Src/capsense.c:33:7:getMoisture	4
+../Core/Src/capsense.c:16:10:Capsense_AdcOnce	1
+../Core/Src/capsense.c:24:10:Capsense_AdcReadAvg	2
+../Core/Src/capsense.c:32:7:Capsense_AdcToVolt	1
+../Core/Src/capsense.c:36:7:Capsense_GetMoisture	4

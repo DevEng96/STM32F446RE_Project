@@ -8,9 +8,10 @@
 #include "capsense.h"
 #include "stdio.h"
 
-extern ADC_HandleTypeDef hadc1; // use the ADC handle from main
-static uint16_t dry_counts = 3000;   // measure in air & set TODO
-static uint16_t wet_counts = 1110;   // measure in water/very wet soil & set TODO
+
+extern ADC_HandleTypeDef hadc1; // use ADC handle from main
+static uint16_t dry_counts = 3000;
+static uint16_t wet_counts = 1110;
 
 uint16_t Capsense_AdcOnce(void) {
 	HAL_ADC_Start(&hadc1);
@@ -34,9 +35,6 @@ float Capsense_AdcToVolt(uint16_t counts) {
 
 float Capsense_GetMoisture() {
 	uint16_t raw = Capsense_AdcReadAvg(16);
-//	uint16_t raw = read_adc_avg(16);
-	//	float v = adc_counts_to_volt(raw);
-	printf("CAP RAW = %u\r\n", raw);   // <--- ADD THIS LINE
 	float pct = 0.0f;
 	if (dry_counts != wet_counts) {
 		pct = 100.0f * (float) (dry_counts - raw)
@@ -47,5 +45,4 @@ float Capsense_GetMoisture() {
 			pct = 100.0f;
 	}
 	return pct;
-
 }

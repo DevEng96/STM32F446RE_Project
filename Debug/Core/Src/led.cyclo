@@ -1,2 +1,2 @@
-../Core/Src/led.c:14:6:setLED	1
-../Core/Src/led.c:20:6:blinkLED	6
+../Core/Src/led.c:14:6:LED_Set	1
+../Core/Src/led.c:20:6:LED_Blink	6

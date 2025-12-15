@@ -42,4 +42,6 @@ bool Settings_IsDone(void);
 const Settings_t* Settings_Get(void);
 bool Settings_TakeSelectClick(void);
 
+
+
 #endif /* INC_SETTINGS_MENU_H_ */

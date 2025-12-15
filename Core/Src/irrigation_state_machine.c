@@ -5,16 +5,21 @@
  * @date    2025-11-30
  */
 
-#include "irrigation_state_machine.h"
-#include "logging.h"
+#include "stdio.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "usart.h"
 #include "rtc.h"
+
+#include "lcd_driver.h"
+
+#include "irrigation_state_machine.h"
+#include "settings_menu.h"
+#include "logging.h"
 #include "capsense.h"
 #include "lm75b.h"
-#include "lcd_driver.h"
-#include "stdio.h"
-#include "settings_menu.h"
-#include "usart.h"
 #include "led.h"
+
 
 
 /* Private static state --------------------------------------------------- */
@@ -58,6 +63,7 @@ void Irrigation_Init(void) {
 }
 
 void Irrigation_Tick(void) {
+	//todo implement HW timer for further development
 	uint32_t now = HAL_GetTick();
 	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
 	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
@@ -70,9 +76,9 @@ void Irrigation_Tick(void) {
 			LED_Set(1, 0, 1);
 			justEnteredState = 0;
 		}
-		if ((int32_t) (now - nextCheckTime) >= 0) { // signed trick for wraparound
+		if ((int32_t) (now - nextCheckTime) >= 0) {
 			currentState = STATE_CHECK_CONDITIONS;
-			nextCheckTime = now + CHECK_PERIOD_MS;  // schedule next check
+			nextCheckTime = now + CHECK_PERIOD_MS;
 			justEnteredState = 1;
 		}
 
@@ -129,17 +135,6 @@ void Irrigation_Tick(void) {
 	}
 
 	case STATE_PUMP_ON: {
-
-		if (pumpCyclesThisCheck >= PUMP_CYCLES_MAX) {
-			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin,
-					GPIO_PIN_RESET);
-			currentState = STATE_ERROR;
-			errorCause = ERROR_PUMP_OVERRUN;
-			justEnteredState = 1;
-			printf("STATE PUMP: Max Pump Cycles Reached\r\n");
-			break;
-		}
-
 		if (justEnteredState) {
 			HAL_GPIO_WritePin(RELAIS_K1_GPIO_Port, RELAIS_K1_Pin, GPIO_PIN_SET);
 			pumpStartTime = now;
@@ -164,10 +159,9 @@ void Irrigation_Tick(void) {
 		}
 
 		if ((int32_t) (now - soakStartTime) >= (int32_t) SOAK_WAIT_MS) {
-
 			float moisture = Capsense_GetMoisture();
 			printf("STATE SOAK WAIT:  %f\r\n", moisture);
-			if (TankLevelOk()) {
+			if (!TankLevelOk()) {
 				currentState = STATE_ERROR;
 				errorCause = ERROR_TANK_EMPTY;
 			} else if ((moisture < cfg->moistureMaxPct)
@@ -253,7 +247,6 @@ void Irrigation_Tick(void) {
 			justEnteredState = 1;
 			break;
 		}
-
 		break;
 	}
 	}
@@ -266,7 +259,6 @@ static bool InWateringWindow(RTC_TimeTypeDef *t) {
 
 	if (t->Hours >= cfg->eveningStartHour && t->Hours < cfg->eveningEndHour)
 		return true;
-
 	return false;
 }
 
